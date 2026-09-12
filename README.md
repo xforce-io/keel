@@ -2,7 +2,7 @@
 
 一条有门禁的研发交付 skill。把单个任务从 Issue 推到设计批准、实现、独立审查、CI 与合入。
 
-它不是第二套 pstack，也不是常驻 mode。`kairo` 管调研，`reflection` 管事后收口，`keel` 只管这条交付状态机。名词以 [docs/glossary.md](docs/glossary.md) 为准。
+它不是第二套 pstack，也不是常驻 mode。名词以 [docs/glossary.md](docs/glossary.md) 为准。
 
 ## 安装
 
@@ -21,7 +21,7 @@ cd keel
 3. 把 CLI 链到 `~/.local/bin/keel`
 4. 若 PATH 里有 `local-skill`，执行 `refresh`
 
-不写入 `~/.agents/skills/`。常驻 skill 仍只应是 `reflection` 与 `kairo`。
+不写入 `~/.agents/skills/`。
 
 可选：
 

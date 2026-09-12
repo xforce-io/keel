@@ -3,16 +3,13 @@ name: keel
 description: >
   Use when the user says keel, /keel, 处理 Issue, 设计 Issue, 开发 Issue,
   端到端完成, 端到端改, or asks to ship, merge, or continue a guarded delivery
-  lifecycle. Do not use for isolated code review, post-task reflection, or
-  Kairo topic research.
+  lifecycle. Do not use for isolated code review or post-task reflection.
 ---
 
 # keel
 
 推进**一个**任务走过下一合法交付阶段。服从当前有效的全局与项目 `AGENTS.md`。
 不复制项目规则、不代替 `code-review`、不发明部署手册。
-
-`kairo` 管调研主题，`reflection` 管事后收口。两者都不在这条状态机里。
 
 ## 选择模式
 
