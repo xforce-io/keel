@@ -8,6 +8,7 @@
 |---|---|
 | `keel` | 选模式、选下一合法环节、完整读取该环节 skill |
 | `keel-issue` | 定位仓库、Issue、验收 |
+| `keel-how` | 设计/实现前说明现有子系统怎么工作 |
 | `keel-design` | 设计并停在人工批准 |
 | `keel-dev` | 实现与 `S1…Sn` 验收表 |
 | `keel-verify` | 按应用仓库 `.grok/skills/verify-*` 驾驶手册与功能地图证明 S1 |

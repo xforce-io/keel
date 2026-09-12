@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 import unittest
@@ -12,6 +13,7 @@ CLI = ROOT / "bin" / "keel"
 STAGE_SKILLS = (
     "keel",
     "keel-issue",
+    "keel-how",
     "keel-design",
     "keel-dev",
     "keel-verify",
@@ -104,7 +106,49 @@ class KeelInstallTests(unittest.TestCase):
             self.assertIn("library/keel:", ok.stdout)
             self.assertIn("library/keel-design:", ok.stdout)
             self.assertIn("library/keel-verify:", ok.stdout)
+            self.assertIn("library/keel-how:", ok.stdout)
             self.assertNotIn("library: 未安装", ok.stdout)
+
+
+def _router_stage_order() -> list[str]:
+    text = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
+    return re.findall(r"^\| \d+ \| `(keel(?:-[a-z]+)?)` \|", text, re.M)
+
+
+class KeelHowContractTests(unittest.TestCase):
+    def test_router_orders_how_after_issue_before_design_and_dev(self) -> None:
+        order = _router_stage_order()
+        self.assertEqual(
+            order,
+            [
+                "keel-issue",
+                "keel-how",
+                "keel-design",
+                "keel-dev",
+                "keel-verify",
+                "keel-review",
+                "keel-release",
+            ],
+        )
+        router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("`keel-how`（可按该环节 skip）→ `keel-design`", router)
+        self.assertIn("`keel-how`（可按该环节 skip）→ `keel-dev`", router)
+        self.assertIn("下一合法环节是 `keel-how`", router)
+        self.assertNotIn("explorer-prompt", router)
+        self.assertNotIn("grok-4.6-fast-xhigh", router)
+
+    def test_how_stage_skip_citation_and_blocked(self) -> None:
+        how = (ROOT / "skills" / "keel-how" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("skip: 已定位机制", how)
+        self.assertIn("skip: 无现成机制可讲", how)
+        self.assertIn("skip: 单模块且入口已钉死", how)
+        self.assertIn("跨模块", how)
+        self.assertIn("BLOCKED", how)
+        self.assertIn("出处", how)
+        self.assertNotIn("explorer-prompt", how)
+        self.assertNotIn("grok-4.6-fast-xhigh", how)
+        self.assertNotIn(".grok/skills/verify-", how)
+        self.assertIn("不是 `keel-verify`", how)
 
 
 class KeelReviewContractTests(unittest.TestCase):
