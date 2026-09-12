@@ -58,6 +58,9 @@ class KeelInstallTests(unittest.TestCase):
                 self.assertTrue((home / ".claude" / "skills" / name).is_symlink(), name)
                 self.assertFalse((home / ".agents" / "skills" / name).exists(), name)
             self.assertTrue((home / ".local" / "bin" / "keel").exists())
+            agent = home / ".grok" / "agents" / "reviewer.md"
+            self.assertTrue(agent.is_symlink())
+            self.assertEqual(agent.resolve(), (ROOT / "agents" / "reviewer.md").resolve())
 
     def test_install_skips_foreign_skill_but_installs_siblings(self) -> None:
         import tempfile
@@ -90,6 +93,7 @@ class KeelInstallTests(unittest.TestCase):
                     name,
                 )
                 self.assertFalse((home / ".grok" / "skills" / name).exists(), name)
+            self.assertFalse((home / ".grok" / "agents" / "reviewer.md").exists())
             self.assertFalse((home / ".local" / "bin" / "keel").exists())
 
     def test_doctor_reports_missing_then_installed(self) -> None:
@@ -108,6 +112,47 @@ class KeelInstallTests(unittest.TestCase):
             self.assertIn("library/keel-verify:", ok.stdout)
             self.assertIn("library/keel-how:", ok.stdout)
             self.assertNotIn("library: 未安装", ok.stdout)
+
+
+class KeelReviewerAgentTests(unittest.TestCase):
+    def test_install_skips_foreign_reviewer_agent(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            home = Path(raw)
+            dest = home / ".grok" / "agents" / "reviewer.md"
+            dest.parent.mkdir(parents=True)
+            dest.write_text(
+                "---\nname: reviewer\nmodel: grok-4.5\npermission_mode: plan\n---\nlocal\n",
+                encoding="utf-8",
+            )
+            result = run_keel(home, "install")
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+            self.assertIn("grok-agent/reviewer: skip", result.stdout)
+            self.assertIn("model: grok-4.5", dest.read_text(encoding="utf-8"))
+            doctor = run_keel(home, "doctor")
+            self.assertIn("本机已有", doctor.stdout)
+            self.assertIn("model=grok-4.5", doctor.stdout)
+
+    def test_shipped_agent_is_plan_without_model_slug(self) -> None:
+        text = (ROOT / "agents" / "reviewer.md").read_text(encoding="utf-8")
+        end = text.find("\n---", 3)
+        front = text[3:end]
+        self.assertIn("permission_mode: plan", front)
+        self.assertNotIn("model:", front)
+
+    def test_doctor_lists_reviewer_after_install(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            home = Path(raw)
+            (home / ".grok").mkdir()
+            missing = run_keel(home, "doctor")
+            self.assertIn("grok-agent/reviewer: 未安装", missing.stdout)
+            run_keel(home, "install")
+            ok = run_keel(home, "doctor")
+            self.assertIn("grok-agent/reviewer: symlink", ok.stdout)
+            self.assertIn("未绑模型", ok.stdout)
 
 
 def _router_stage_order() -> list[str]:

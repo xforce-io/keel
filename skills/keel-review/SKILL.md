@@ -19,7 +19,7 @@ description: >
 
 - **Codex：** 用原生 code review（配置的 `review_model`）。
 - **Pi：** 调 `reviewer` 子代理；用户覆盖选互补模型。
-- **Grok：** `subagent_type: reviewer`；禁止用会继承实现模型的 `general-purpose`。
+- **Grok：** `subagent_type: reviewer`；禁止用会继承实现模型的 `general-purpose`。类型来自 `keel install` 挂到 `~/.grok/agents/reviewer.md` 的角色文件（`permission_mode: plan`）。具体模型 slug 由本机 frontmatter 或 `~/.grok/config.toml` 的 `[subagents.models]` 绑定，不写进 keel skill。
 - **OMP：** 调用户 `reviewer` agent 定义。
 
 能观察到宿主/模型就记下来，不要只信模型自称。优先与实现不同的强模型。无法证明独立则不得进入 `keel-release`。

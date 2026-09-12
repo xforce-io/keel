@@ -31,8 +31,9 @@ cd keel
 
 1. 把 `skills/*` 链到 `~/.local/share/agent-skills/library/<name>`（`local-skill find` 用这些）
 2. 对已存在的 Grok / Claude / Cursor / Codex / Pi 家目录挂同名 skill
-3. 把 CLI 链到 `~/.local/bin/keel`
-4. 若 PATH 里有 `local-skill`，执行 `refresh`
+3. 若存在 `~/.grok`，把 `agents/reviewer.md` 挂到 `~/.grok/agents/reviewer.md`（plan 权限；不覆盖已有本机角色，不写死模型 slug）
+4. 把 CLI 链到 `~/.local/bin/keel`
+5. 若 PATH 里有 `local-skill`，执行 `refresh`
 
 不写入 `~/.agents/skills/`。
 
