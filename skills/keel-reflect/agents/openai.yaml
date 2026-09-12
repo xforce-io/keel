@@ -1,0 +1,6 @@
+interface:
+  display_name: "keel-reflect"
+  short_description: "复盘轨迹：三透镜后给出 Accepted / Rejected / Backlog，人批再改 skill 或建 Issue"
+  default_prompt: "Use $keel-reflect to mine this task into approved skill or instruction edits and Issue drafts."
+policy:
+  allow_implicit_invocation: false

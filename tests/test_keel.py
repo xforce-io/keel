@@ -19,6 +19,7 @@ STAGE_SKILLS = (
     "keel-verify",
     "keel-review",
     "keel-release",
+    "keel-reflect",
 )
 LOOKUP = ROOT / "skills" / "keel-verify" / "lookup.py"
 
@@ -111,6 +112,7 @@ class KeelInstallTests(unittest.TestCase):
             self.assertIn("library/keel-design:", ok.stdout)
             self.assertIn("library/keel-verify:", ok.stdout)
             self.assertIn("library/keel-how:", ok.stdout)
+            self.assertIn("library/keel-reflect:", ok.stdout)
             self.assertNotIn("library: 未安装", ok.stdout)
 
 
@@ -175,6 +177,7 @@ class KeelHowContractTests(unittest.TestCase):
                 "keel-release",
             ],
         )
+        self.assertNotIn("keel-reflect", order)
         router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("`keel-how`（可按该环节 skip）→ `keel-design`", router)
         self.assertIn("`keel-how`（可按该环节 skip）→ `keel-dev`", router)
@@ -194,6 +197,27 @@ class KeelHowContractTests(unittest.TestCase):
         self.assertNotIn("grok-4.6-fast-xhigh", how)
         self.assertNotIn(".grok/skills/verify-", how)
         self.assertIn("不是 `keel-verify`", how)
+
+
+class KeelReflectContractTests(unittest.TestCase):
+    def test_reflect_is_not_a_delivery_stage(self) -> None:
+        router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertNotIn("keel-reflect", _router_stage_order())
+        self.assertIn("沉淀不在本状态机内", router)
+        self.assertIn("不要在端到端结束时默认跑复盘", router)
+
+    def test_reflect_uses_three_lenses_and_approval(self) -> None:
+        text = (ROOT / "skills" / "keel-reflect" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("Accepted", text)
+        self.assertIn("Rejected", text)
+        self.assertIn("Backlog", text)
+        self.assertIn("判断", text)
+        self.assertIn("工具", text)
+        self.assertIn("唱反调", text)
+        self.assertIn("不自动建单", text)
+        self.assertIn("inspect_context.py", text)
+        self.assertNotIn("grok-4.6-fast-xhigh", text)
+        self.assertIn("你批了才建", text)
 
 
 class KeelReviewContractTests(unittest.TestCase):

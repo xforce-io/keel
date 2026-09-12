@@ -14,6 +14,7 @@
 | `keel-verify` | 按应用仓库 `.grok/skills/verify-*` 驾驶手册与功能地图证明 S1 |
 | `keel-review` | 独立审查 |
 | `keel-release` | CI、PR/MR、合入；有 runbook 则部署 |
+| `keel-reflect` | 任务后复盘（不在交付链上；你说了才跑） |
 
 也可单独调用 `/keel-design` 等。项目 `AGENTS.md` 仍是宪法。
 
@@ -57,14 +58,15 @@ cd keel
 keel 设计这个 Issue
 端到端完成
 /keel-review
+keel-reflect
 ```
 
-或 `/keel`。Agent 应读 `skills/keel/SKILL.md`，再完整读取它选出的环节 skill。
+或 `/keel`。交付时 Agent 应读 `skills/keel/SKILL.md`，再完整读取它选出的环节 skill。复盘说 `keel-reflect` / `reflection`，不在端到端里默认跑。
 
 模式：`route` · `design` · `dev` · `end-to-end`。
 
 ## 开发
 
 ```bash
-python3 -m unittest tests.test_keel
+python3 -m unittest tests.test_keel tests.test_keel_reflect_inspect
 ```
