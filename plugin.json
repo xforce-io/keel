@@ -1,0 +1,20 @@
+{
+  "name": "keel",
+  "displayName": "keel",
+  "version": "0.1.0",
+  "description": "Guarded delivery skill: one task from Issue through design approval, implementation, independent review, CI, and merge.",
+  "author": {
+    "name": "xforce-io"
+  },
+  "homepage": "https://github.com/xforce-io/keel",
+  "repository": "https://github.com/xforce-io/keel",
+  "license": "MIT",
+  "keywords": [
+    "keel",
+    "delivery",
+    "issue",
+    "review",
+    "merge"
+  ],
+  "skills": "./skills/"
+}

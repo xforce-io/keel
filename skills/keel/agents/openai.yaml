@@ -1,0 +1,4 @@
+interface:
+  display_name: "keel"
+  short_description: "Drive one task through guarded delivery gates"
+  default_prompt: "Use $keel to advance this task through the requested delivery mode."
