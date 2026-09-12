@@ -2,8 +2,13 @@
 
 | 规范名 | 一句话定义 | 禁止别称 |
 |---|---|---|
-| keel | 一条研发交付 skill：按门禁推进单个任务，从 Issue 到设计批准、实现、独立审查、CI 与合入。 | 我的 pstack、rd-mode、xupeng-mode、delivery 2、统一入口 skill |
+| keel | 路由 skill。按模式选择下一合法环节，完整读取对应环节 skill 再执行。 | 我的 pstack、rd-mode、xupeng-mode、delivery 2、统一入口 skill |
+| keel-issue | 环节 skill。定位仓库、Issue、验收与已完成阶段。 | issue.md、intake |
+| keel-design | 环节 skill。写出所需设计并停在人工批准。 | 自批设计、design.md |
+| keel-dev | 环节 skill。实现已批准范围并填写 `S1…Sn` 验收表。 | 写完就算、development.md |
+| keel-review | 环节 skill。对最新精确目标做独立审查。 | 自己审自己、reviewers.md |
+| keel-release | 环节 skill。CI、PR/MR、合入；有 runbook 则部署与核对。 | 本地跑起来、release.md |
 | route | keel 模式：查看当前状态并只推进一步合法阶段。 | 随便处理一下 |
-| design | keel 模式：只完成所需设计并停在人工批准。 | 自批设计 |
-| dev | keel 模式：实现、测试、独立审查通过后停在可发布，不合入。 | 写完就算 |
-| end-to-end | keel 模式：从当前状态走到独立审查、CI、合入，以及项目若有的部署与健康检查。 | 本地跑起来、重启服务 |
+| design | keel 模式：执行到 `keel-design` 并停在人工批准。 | — |
+| dev | keel 模式：`keel-dev` 后接 `keel-review`，停在可发布、不合入。 | — |
+| end-to-end | keel 模式：从下一合法环节执行到 `keel-release`。 | 本地跑起来、重启服务 |

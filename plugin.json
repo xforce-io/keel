@@ -2,7 +2,7 @@
   "name": "keel",
   "displayName": "keel",
   "version": "0.1.0",
-  "description": "Guarded delivery skill: one task from Issue through design approval, implementation, independent review, CI, and merge.",
+  "description": "Guarded delivery: keel routes; keel-issue, keel-design, keel-dev, keel-review, and keel-release are stage skills.",
   "author": {
     "name": "xforce-io"
   },

@@ -1,12 +1,23 @@
 # keel
 
-一条有门禁的研发交付 skill。把单个任务从 Issue 推到设计批准、实现、独立审查、CI 与合入。
+有门禁的研发交付：**keel 只路由**，环节是独立 skill。把单个任务从 Issue 推到设计批准、实现、独立审查、CI 与合入。
 
 它不是第二套 pstack，也不是常驻 mode。名词以 [docs/glossary.md](docs/glossary.md) 为准。
 
+| skill | 职责 |
+|---|---|
+| `keel` | 选模式、选下一合法环节、完整读取该环节 skill |
+| `keel-issue` | 定位仓库、Issue、验收 |
+| `keel-design` | 设计并停在人工批准 |
+| `keel-dev` | 实现与 `S1…Sn` 验收表 |
+| `keel-review` | 独立审查 |
+| `keel-release` | CI、PR/MR、合入；有 runbook 则部署 |
+
+也可单独调用 `/keel-design` 等。项目 `AGENTS.md` 仍是宪法。
+
 ## 安装
 
-需要 Python ≥ 3.11。克隆后把 skill 挂到本机：
+需要 Python ≥ 3.11。克隆后把全部 skill 挂到本机：
 
 ```bash
 git clone https://github.com/xforce-io/keel.git
@@ -16,7 +27,7 @@ cd keel
 
 `install` 会：
 
-1. 把 `skills/keel` 链到 `~/.local/share/agent-skills/library/keel`（`local-skill find` 用这份）
+1. 把 `skills/*` 链到 `~/.local/share/agent-skills/library/<name>`（`local-skill find` 用这些）
 2. 对已存在的 Grok / Claude / Cursor / Codex / Pi 家目录挂同名 skill
 3. 把 CLI 链到 `~/.local/bin/keel`
 4. 若 PATH 里有 `local-skill`，执行 `refresh`
@@ -42,11 +53,12 @@ cd keel
 用 keel 处理 Issue 12
 keel 设计这个 Issue
 端到端完成
+/keel-review
 ```
 
-或 `/keel`。Agent 应读 `skills/keel/SKILL.md`，再只读当前阶段的 `references/`。
+或 `/keel`。Agent 应读 `skills/keel/SKILL.md`，再完整读取它选出的环节 skill。
 
-模式：`route` · `design` · `dev` · `end-to-end`。硬门禁包括：禁止自批设计、合入前独立审查、`S1…Sn` 验收表。项目 `AGENTS.md` 仍是宪法。
+模式：`route` · `design` · `dev` · `end-to-end`。
 
 ## 开发
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install, inspect, or remove the keel skill from a machine."""
+"""Install, inspect, or remove keel skills from a machine."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-SKILL_NAME = "keel"
+CLI_NAME = "keel"
 SKILL_MD = "SKILL.md"
 
 
@@ -22,11 +22,18 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
-def skill_source(root: Path | None = None) -> Path:
-    path = (root or repo_root()) / "skills" / SKILL_NAME
-    if not (path / SKILL_MD).is_file():
-        raise FileNotFoundError(f"找不到 {path / SKILL_MD}")
-    return path
+def list_skills(root: Path | None = None) -> list[Path]:
+    skills = (root or repo_root()) / "skills"
+    if not skills.is_dir():
+        raise FileNotFoundError(f"找不到 {skills}")
+    found = sorted(
+        path
+        for path in skills.iterdir()
+        if path.is_dir() and (path / SKILL_MD).is_file()
+    )
+    if not found:
+        raise FileNotFoundError(f"{skills} 下没有 SKILL.md")
+    return found
 
 
 def home_dir() -> Path:
@@ -37,22 +44,22 @@ def home_dir() -> Path:
 
 
 @dataclass(frozen=True)
-class Mount:
+class Host:
     name: str
     detect: Path
-    dest: Path
+    parent: Path
     required: bool = False
 
 
-def mounts(home: Path) -> tuple[Mount, ...]:
-    library = home / ".local" / "share" / "agent-skills" / "library" / SKILL_NAME
+def hosts(home: Path) -> tuple[Host, ...]:
+    library = home / ".local" / "share" / "agent-skills" / "library"
     return (
-        Mount("library", library.parent, library, required=True),
-        Mount("grok", home / ".grok", home / ".grok" / "skills" / SKILL_NAME),
-        Mount("claude", home / ".claude", home / ".claude" / "skills" / SKILL_NAME),
-        Mount("cursor", home / ".cursor", home / ".cursor" / "skills" / SKILL_NAME),
-        Mount("codex", home / ".codex", home / ".codex" / "skills" / SKILL_NAME),
-        Mount("pi", home / ".pi" / "agent", home / ".pi" / "agent" / "skills" / SKILL_NAME),
+        Host("library", library, library, required=True),
+        Host("grok", home / ".grok", home / ".grok" / "skills"),
+        Host("claude", home / ".claude", home / ".claude" / "skills"),
+        Host("cursor", home / ".cursor", home / ".cursor" / "skills"),
+        Host("codex", home / ".codex", home / ".codex" / "skills"),
+        Host("pi", home / ".pi" / "agent", home / ".pi" / "agent" / "skills"),
     )
 
 
@@ -129,7 +136,7 @@ def remove_mount(dest: Path, src: Path) -> str:
 
 def install_bin(script: Path, bin_dir: Path, *, copy: bool) -> str:
     bin_dir.mkdir(parents=True, exist_ok=True)
-    dest = bin_dir / SKILL_NAME
+    dest = bin_dir / CLI_NAME
     src = script.resolve()
     if dest.is_symlink() or dest.exists():
         if dest.is_symlink():
@@ -160,7 +167,7 @@ def install_bin(script: Path, bin_dir: Path, *, copy: bool) -> str:
 
 
 def remove_bin(script: Path, bin_dir: Path) -> str:
-    dest = bin_dir / SKILL_NAME
+    dest = bin_dir / CLI_NAME
     if not dest.exists() and not dest.is_symlink():
         return "absent"
     src = script.resolve()
@@ -216,22 +223,24 @@ def install_plugin(root: Path) -> str:
 def command_install(args: argparse.Namespace) -> int:
     home = Path(args.home).resolve() if args.home else home_dir()
     root = repo_root()
-    src = skill_source(root)
-    lines = [f"source: {src}"]
-    for mount in mounts(home):
-        if not mount.required and not mount.detect.is_dir():
-            continue
-        how = link_or_copy(src, mount.dest, copy=args.copy)
-        if how == "skip-exists":
-            lines.append(f"{mount.name}: skip {mount.dest}（已存在且不是 keel）")
-        else:
-            lines.append(f"{mount.name}: {how} → {mount.dest}")
+    skills = list_skills(root)
+    lines = [f"source: {root / 'skills'} ({len(skills)})"]
+    for skill in skills:
+        for host in hosts(home):
+            if not host.required and not host.detect.is_dir():
+                continue
+            dest = host.parent / skill.name
+            how = link_or_copy(skill, dest, copy=args.copy)
+            if how == "skip-exists":
+                lines.append(f"{host.name}/{skill.name}: skip {dest}（已存在且不是 keel）")
+            else:
+                lines.append(f"{host.name}/{skill.name}: {how} → {dest}")
     bin_dir = Path(args.bin_dir).expanduser() if args.bin_dir else home / ".local" / "bin"
     how = install_bin(Path(__file__), bin_dir, copy=args.copy)
     if how == "skip-exists":
-        lines.append(f"bin: skip {bin_dir / SKILL_NAME}（已存在且不是本 CLI）")
+        lines.append(f"bin: skip {bin_dir / CLI_NAME}（已存在且不是本 CLI）")
     else:
-        lines.append(f"bin: {how} → {bin_dir / SKILL_NAME}")
+        lines.append(f"bin: {how} → {bin_dir / CLI_NAME}")
     refreshed = refresh_local_skill()
     if refreshed:
         lines.append(refreshed)
@@ -244,14 +253,18 @@ def command_install(args: argparse.Namespace) -> int:
 
 def command_uninstall(args: argparse.Namespace) -> int:
     home = Path(args.home).resolve() if args.home else home_dir()
-    src = skill_source()
+    skills = list_skills()
     lines: list[str] = []
-    for mount in mounts(home):
-        how = remove_mount(mount.dest, src)
-        lines.append(f"{mount.name}: {how} {mount.dest}")
+    for skill in skills:
+        for host in hosts(home):
+            dest = host.parent / skill.name
+            how = remove_mount(dest, skill)
+            if how == "absent" and not host.required and not host.detect.is_dir():
+                continue
+            lines.append(f"{host.name}/{skill.name}: {how} {dest}")
     if not args.keep_bin:
         bin_dir = Path(args.bin_dir).expanduser() if args.bin_dir else home / ".local" / "bin"
-        lines.append(f"bin: {remove_bin(Path(__file__), bin_dir)} {bin_dir / SKILL_NAME}")
+        lines.append(f"bin: {remove_bin(Path(__file__), bin_dir)} {bin_dir / CLI_NAME}")
     refreshed = refresh_local_skill()
     if refreshed:
         lines.append(refreshed)
@@ -265,28 +278,34 @@ def command_doctor(args: argparse.Namespace) -> int:
     root = repo_root()
     lines = [f"root: {root}"]
     try:
-        src = skill_source(root)
-        lines.append(f"source: {src}")
+        skills = list_skills(root)
+        lines.append("skills: " + " ".join(path.name for path in skills))
     except FileNotFoundError as exc:
         lines.append(f"source: ⚠ {exc}")
         for line in lines:
             print(line)
         return 1
-    for mount in mounts(home):
-        dest = mount.dest
-        if _is_our_link(dest, src) or _same_skill(dest, src):
-            kind = "symlink" if dest.is_symlink() else "copy"
-            lines.append(f"{mount.name}: {kind} {dest}")
-        elif dest.exists() or dest.is_symlink():
-            lines.append(f"{mount.name}: ⚠ 占用且不是 keel {dest}")
-        elif mount.required:
-            lines.append(f"{mount.name}: 未安装 → keel install")
-        elif mount.detect.is_dir():
-            lines.append(f"{mount.name}: 未安装 → keel install")
-        else:
-            lines.append(f"{mount.name}: 未探测到 {mount.detect}")
+    library_missing = True
+    for skill in skills:
+        for host in hosts(home):
+            dest = host.parent / skill.name
+            if _is_our_link(dest, skill) or _same_skill(dest, skill):
+                kind = "symlink" if dest.is_symlink() else "copy"
+                lines.append(f"{host.name}/{skill.name}: {kind} {dest}")
+                if host.name == "library":
+                    library_missing = False
+            elif dest.exists() or dest.is_symlink():
+                lines.append(f"{host.name}/{skill.name}: ⚠ 占用且不是 keel {dest}")
+                if host.name == "library":
+                    library_missing = False
+            elif host.required:
+                lines.append(f"{host.name}/{skill.name}: 未安装 → keel install")
+            elif host.detect.is_dir():
+                lines.append(f"{host.name}/{skill.name}: 未安装 → keel install")
+    if library_missing:
+        lines.append("library: 未安装 → keel install")
     bin_dir = Path(args.bin_dir).expanduser() if args.bin_dir else home / ".local" / "bin"
-    dest = bin_dir / SKILL_NAME
+    dest = bin_dir / CLI_NAME
     if dest.is_symlink() or dest.exists():
         try:
             resolved = dest.resolve()
@@ -294,7 +313,7 @@ def command_doctor(args: argparse.Namespace) -> int:
             resolved = dest
         lines.append(f"bin: {dest} → {resolved}")
     else:
-        lines.append(f"bin: 未安装 → keel install  ({bin_dir / SKILL_NAME})")
+        lines.append(f"bin: 未安装 → keel install  ({bin_dir / CLI_NAME})")
     exe = shutil.which("local-skill")
     lines.append("local-skill: " + (exe or "未在 PATH"))
     for line in lines:
@@ -305,13 +324,13 @@ def command_doctor(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="keel",
-        description="把 keel skill 安装到本机 coding agent 与 local-skill 库。",
+        description="把 keel 路由与环节 skill 安装到本机 coding agent 与 local-skill 库。",
     )
     parser.add_argument("--home", help="覆盖家目录（测试用；也可用 KEEL_HOME）")
     parser.add_argument("--bin-dir", help="CLI 安装目录，默认 ~/.local/bin")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    install = sub.add_parser("install", help="挂载 skill 并安装 CLI")
+    install = sub.add_parser("install", help="挂载全部 skill 并安装 CLI")
     install.add_argument("--copy", action="store_true", help="复制文件，不建符号链接")
     install.add_argument("--plugin", action="store_true", help="同时 grok plugin install --trust")
     install.set_defaults(handler=command_install)

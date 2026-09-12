@@ -1,4 +1,4 @@
 interface:
   display_name: "keel"
   short_description: "Drive one task through guarded delivery gates"
-  default_prompt: "Use $keel to advance this task through the requested delivery mode."
+  default_prompt: "Use $keel to route this task; read the selected stage skill fully before acting."
