@@ -107,6 +107,16 @@ class KeelInstallTests(unittest.TestCase):
             self.assertNotIn("library: 未安装", ok.stdout)
 
 
+class KeelReviewContractTests(unittest.TestCase):
+    def test_rework_path_requires_keel_verify(self) -> None:
+        text = (ROOT / "skills" / "keel-review" / "SKILL.md").read_text(encoding="utf-8")
+        start = text.index("修复由实现代理")
+        chunk = text[start : start + 500]
+        self.assertIn("keel-verify", chunk)
+        self.assertIn("CHANGES_REQUESTED", chunk)
+        self.assertIn("keel-dev` → `keel-verify", chunk)
+
+
 class KeelVerifyLookupTests(unittest.TestCase):
     def _run_lookup(self, app_root: Path) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
