@@ -14,9 +14,11 @@ STAGE_SKILLS = (
     "keel-issue",
     "keel-design",
     "keel-dev",
+    "keel-verify",
     "keel-review",
     "keel-release",
 )
+LOOKUP = ROOT / "skills" / "keel-verify" / "lookup.py"
 
 
 def run_keel(home: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -101,7 +103,76 @@ class KeelInstallTests(unittest.TestCase):
             self.assertEqual(ok.returncode, 0, ok.stderr + ok.stdout)
             self.assertIn("library/keel:", ok.stdout)
             self.assertIn("library/keel-design:", ok.stdout)
+            self.assertIn("library/keel-verify:", ok.stdout)
             self.assertNotIn("library: 未安装", ok.stdout)
+
+
+class KeelVerifyLookupTests(unittest.TestCase):
+    def _run_lookup(self, app_root: Path) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, str(LOOKUP), str(app_root)],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+    def test_finds_grok_handbook_and_ignores_cursor(self) -> None:
+        import json
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            app = Path(raw)
+            grok = app / ".grok" / "skills" / "verify-notes"
+            grok.mkdir(parents=True)
+            (grok / "SKILL.md").write_text("# notes\n", encoding="utf-8")
+            features = grok / "features"
+            features.mkdir()
+            (features / "README.md").write_text("# map\n", encoding="utf-8")
+            (features / "create-note.md").write_text("# create\n", encoding="utf-8")
+            cursor = app / ".cursor" / "skills" / "verify-notes"
+            cursor.mkdir(parents=True)
+            (cursor / "SKILL.md").write_text("# cursor-only\n", encoding="utf-8")
+            (cursor / "features").mkdir()
+            (cursor / "features" / "other.md").write_text("# other\n", encoding="utf-8")
+            result = self._run_lookup(app)
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["status"], "found")
+            self.assertEqual(len(payload["handbooks"]), 1)
+            handbook = payload["handbooks"][0]
+            self.assertEqual(handbook["name"], "verify-notes")
+            self.assertEqual(Path(handbook["skill_file"]).resolve(), (grok / "SKILL.md").resolve())
+            self.assertEqual(handbook["feature_files"], ["create-note.md"])
+            self.assertNotIn(".cursor", handbook["skill_file"])
+
+    def test_cursor_only_handbook_is_missing(self) -> None:
+        import json
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            app = Path(raw)
+            cursor = app / ".cursor" / "skills" / "verify-notes"
+            cursor.mkdir(parents=True)
+            (cursor / "SKILL.md").write_text("# cursor\n", encoding="utf-8")
+            (cursor / "features").mkdir()
+            (cursor / "features" / "create-note.md").write_text("# create\n", encoding="utf-8")
+            result = self._run_lookup(app)
+            self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["status"], "missing")
+
+    def test_grok_skill_without_features_is_missing(self) -> None:
+        import json
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            app = Path(raw)
+            grok = app / ".grok" / "skills" / "verify-notes"
+            grok.mkdir(parents=True)
+            (grok / "SKILL.md").write_text("# notes\n", encoding="utf-8")
+            result = self._run_lookup(app)
+            self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+            self.assertEqual(json.loads(result.stdout)["status"], "missing")
 
 
 if __name__ == "__main__":

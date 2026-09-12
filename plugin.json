@@ -2,7 +2,7 @@
   "name": "keel",
   "displayName": "keel",
   "version": "0.1.0",
-  "description": "Guarded delivery: keel routes; keel-issue, keel-design, keel-dev, keel-review, and keel-release are stage skills.",
+  "description": "Guarded delivery: keel routes; stage skills include keel-verify against the app repo .grok/skills/verify-* handbook.",
   "author": {
     "name": "xforce-io"
   },

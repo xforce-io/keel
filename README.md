@@ -10,6 +10,7 @@
 | `keel-issue` | 定位仓库、Issue、验收 |
 | `keel-design` | 设计并停在人工批准 |
 | `keel-dev` | 实现与 `S1…Sn` 验收表 |
+| `keel-verify` | 按应用仓库 `.grok/skills/verify-*` 驾驶手册与功能地图证明 S1 |
 | `keel-review` | 独立审查 |
 | `keel-release` | CI、PR/MR、合入；有 runbook 则部署 |
 
