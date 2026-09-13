@@ -525,8 +525,24 @@ class KeelVerifyLookupTests(unittest.TestCase):
             payload = json.loads(result.stdout)
             self.assertEqual([item["name"] for item in payload["handbooks"]], ["verify-notes", "verify-web"])
             self.assertEqual(payload["legacy"], ["verify-cli", "verify-notes"])
+            # The move must be scoped: `git mv` onto an existing dir nests the old copy inside it.
             self.assertIn("git mv", payload["hint"])
-            self.assertNotIn("git rm", payload["hint"])
+            self.assertIn("Never 'git mv' onto an existing directory", payload["hint"])
+            self.assertIn("reconcile the two by hand, then 'git rm -r'", payload["hint"])
+
+    def test_missing_with_legacy_colliding_with_incomplete_agents_dir_warns_before_moving(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            app = Path(raw)
+            (app / ".agents" / "skills" / "verify-notes").mkdir(parents=True)
+            self._write_handbook(app / ".grok" / "skills", "verify-notes")
+            result = self._run_lookup(app)
+            self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["status"], "missing")
+            self.assertEqual(payload["legacy"], ["verify-notes"])
+            self.assertIn("Never 'git mv' onto an existing directory", payload["hint"])
 
     def test_legacy_dir_is_reported_even_when_empty_and_alongside_incomplete_agents_dir(self) -> None:
         import tempfile
@@ -623,13 +639,13 @@ class HandbookPathWordingTests(unittest.TestCase):
                 negated = any(marker in line for marker in ("旧", "retired", "不认", "不是手册", "no longer"))
                 self.assertTrue(negated, f"{relative} still presents the legacy path as a handbook location: {line}")
 
-    def test_deleting_a_legacy_dir_is_never_unconditional_advice(self) -> None:
+    def test_legacy_migration_commands_live_only_in_the_lookup_hint(self) -> None:
+        # Restating the commands here is what let the doc drift into advising an unconditional
+        # delete; lookup.py picks move / reconcile-then-delete / delete and owns the wording.
         text = (ROOT / "skills" / "keel-verify" / "SKILL.md").read_text(encoding="utf-8")
-        # Per clause, not per line: the `found` branch must not offer `git rm` without the move case.
-        for clause in re.split(r"[；。\n]", text):
-            if "git rm" not in clause:
-                continue
-            self.assertIn("git mv", clause, f"keel-verify SKILL.md advises 'git rm' without the move case: {clause}")
+        self.assertIn("hint", text)
+        for command in ("git mv", "git rm"):
+            self.assertNotIn(command, text, f"keel-verify SKILL.md restates '{command}' instead of relaying hint")
 
 
 if __name__ == "__main__":

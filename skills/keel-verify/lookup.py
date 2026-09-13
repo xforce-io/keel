@@ -30,6 +30,13 @@ LEGACY_REMOVE_HINT = (
     "'.grok/skills/verify-*' is retired and a '.agents/skills/' handbook already exists; "
     "delete the old directory (e.g. git rm -r .grok/skills/verify-<app>)."
 )
+LEGACY_MIXED_HINT = (
+    "'.grok/skills/verify-*' is no longer a handbook location, and some of these names already exist "
+    "under '.agents/skills/'. Move only a name that has no '.agents/skills/' directory yet "
+    "(mkdir -p .agents/skills && git mv .grok/skills/verify-<app> .agents/skills/verify-<app>). Never "
+    "'git mv' onto an existing directory: git nests the old copy inside it instead of failing. For a "
+    "name that already exists, reconcile the two by hand, then 'git rm -r' the old directory."
+)
 
 
 @dataclass(frozen=True)
@@ -77,6 +84,18 @@ def incompleteHandbooks(appRoot: Path) -> dict[str, list[str]]:
 def legacyHandbooks(appRoot: Path) -> list[str]:
     """Names of verify-* dirs still sitting at the retired .grok/skills location."""
     return [child.name for child in _verifyDirs(appRoot, LEGACY_ROOT)]
+
+
+def legacyHint(appRoot: Path, legacy: list[str], foundNames: set[str]) -> str:
+    """Pick the migration advice for legacy dirs, keyed on whether the destination is already taken."""
+    if not legacy:
+        raise ValueError("legacyHint requires at least one legacy directory name")
+    if all(name in foundNames for name in legacy):
+        return LEGACY_REMOVE_HINT
+    handbookRoot = appRoot.expanduser().resolve().joinpath(*HANDBOOK_ROOT)
+    if any((handbookRoot / name).exists() for name in legacy):
+        return LEGACY_MIXED_HINT
+    return LEGACY_MOVE_HINT
 
 
 def findVerifyHandbooks(appRoot: Path) -> tuple[VerifyHandbook, ...]:
@@ -134,16 +153,13 @@ def main(argv: list[str] | None = None) -> int:
             payload["incomplete"] = incomplete
         if legacy:
             payload["legacy"] = legacy
-            payload["hint"] = LEGACY_MOVE_HINT
+            payload["hint"] = legacyHint(root, legacy, set())
         print(json.dumps(payload, ensure_ascii=False))
         return 1
     result: dict[str, object] = {"status": "found", "handbooks": [_handbookJson(item) for item in found]}
     if legacy:
         result["legacy"] = legacy
-        # Only a legacy dir that duplicates a found .agents handbook is safe to delete;
-        # anything else still holds un-migrated content and must be moved.
-        foundNames = {item.name for item in found}
-        result["hint"] = LEGACY_REMOVE_HINT if all(name in foundNames for name in legacy) else LEGACY_MOVE_HINT
+        result["hint"] = legacyHint(root, legacy, {item.name for item in found})
     print(json.dumps(result, ensure_ascii=False))
     return 0
 

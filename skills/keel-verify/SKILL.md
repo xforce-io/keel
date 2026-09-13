@@ -28,7 +28,7 @@ description: >
 - 找到一份：完整读取该 `SKILL.md`（Launch / Doctor / Drive / Evidence / Cleanup），再读 `features/README.md` 与本次要对的功能文件。
 - 找到多份：问哪一个 `verify-*`，不要猜。
 - 找不到：见下方缺手册。
-- 输出带 `legacy`：应用仓库还留着 `.grok/skills/verify-*`。它不是手册。两种情况都只把 `hint` 原话说一次，不要自己代读旧路径，也不要把 `hint` 换成别的命令。`missing` 时按缺手册处理，`hint` 是 `mkdir -p` + `git mv` 迁移；`found` 时手册可用，`hint` 只在每个 `legacy` 名字都同名重复了已找到的手册时才是 `git rm`，还剩没搬走的旧目录时仍是 `git mv`——那种目录是仅存的一份，删了就没了。
+- 输出带 `legacy`：应用仓库还留着 `.grok/skills/verify-*`。它不是手册。`missing` 时按缺手册处理，`found` 时手册照常可用；两种情况都只把 `hint` 原话转给用户，不要自己代读旧路径。迁移该搬、该先合再删、还是直接删，由 `lookup.py` 按目标路径是否已被占用判定并写进 `hint`；本文件不复述那些命令，你也不要自己拼——照抄 `hint`，别加删除动作。
 
 ## 缺手册
 
