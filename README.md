@@ -11,7 +11,7 @@
 | `keel-how` | 设计/实现前说明现有子系统怎么工作 |
 | `keel-design` | 设计并停在人工批准 |
 | `keel-dev` | 实现与 `S1…Sn` 验收表 |
-| `keel-verify` | 按应用仓库 `.grok/skills/verify-*` 驾驶手册与功能地图证明 S1 |
+| `keel-verify` | 按应用仓库 `.agents/skills/verify-*` 驾驶手册与功能地图证明 S1 |
 | `keel-review` | 独立审查 |
 | `keel-release` | CI、PR/MR、合入；有 runbook 则部署 |
 | `keel-reflect` | 任务后复盘（不在交付链上；你说了才跑） |
@@ -42,7 +42,7 @@ cd keel
 5. 若 PATH 里有 `local-skill`，执行 `refresh`
 6. 在 `~/.config/keel/state.json` 记下仓库路径和 keel 自己复制出去的文件
 
-不写入 `~/.agents/skills/`。只跳过、只移除非 keel 的东西：指向任意 keel checkout 的符号链接、悬空链接、以及 `state.json` 里记录的副本才算 keel 的。任一项被跳过或失败，`install` 退出码为 1。
+不写入 `~/.agents/skills/`（应用仓库内的 `.agents/skills/verify-*` 是 `keel-verify` 读的驾驶手册位置，与安装无关）。只跳过、只移除非 keel 的东西：指向任意 keel checkout 的符号链接、悬空链接、以及 `state.json` 里记录的副本才算 keel 的。任一项被跳过或失败，`install` 退出码为 1。
 
 可选：
 

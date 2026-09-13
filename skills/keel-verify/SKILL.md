@@ -3,8 +3,9 @@ name: keel-verify
 description: >
   Use when the user says keel-verify or /keel-verify, or when keel routes to
   app-driving proof after implementation and before independent review. Locate
-  the project-local handbook at .grok/skills/verify-* (SKILL.md + features/).
-  Do not look under .cursor. Do not merge or run post-deploy health checks.
+  the project-local handbook at .agents/skills/verify-* (SKILL.md + features/).
+  Do not look under .cursor or the retired .grok/skills. Do not merge or run
+  post-deploy health checks.
 ---
 
 # keel-verify
@@ -15,18 +16,19 @@ description: >
 
 ## 定位手册
 
-应用仓库根目录下，只认：
+应用仓库根目录下，只认宿主中性的：
 
 ```text
-.grok/skills/verify-<app>/SKILL.md
-.grok/skills/verify-<app>/features/
+.agents/skills/verify-<app>/SKILL.md
+.agents/skills/verify-<app>/features/
 ```
 
-用本目录的 `lookup.py`（`python3 skills/keel-verify/lookup.py <app-root>`，或已安装 skill 目录里的同名文件）。它**不搜索 `.cursor`**。`.cursor/skills/verify-*` 即使存在也当作没有手册。三件缺一不可：`SKILL.md`、`features/`、`features/README.md`；缺件的目录在输出 `incomplete` 里列出，按缺手册处理，不要补猜。
+用本目录的 `lookup.py`（`python3 skills/keel-verify/lookup.py <app-root>`，或已安装 skill 目录里的同名文件）。它**不搜索 `.cursor`**，**也不把旧的 `.grok/skills/verify-*` 当手册**。`.cursor/skills/verify-*` 即使存在也当作没有手册。三件缺一不可：`SKILL.md`、`features/`、`features/README.md`；缺件的目录在输出 `incomplete` 里列出，按缺手册处理，不要补猜。
 
 - 找到一份：完整读取该 `SKILL.md`（Launch / Doctor / Drive / Evidence / Cleanup），再读 `features/README.md` 与本次要对的功能文件。
 - 找到多份：问哪一个 `verify-*`，不要猜。
 - 找不到：见下方缺手册。
+- 输出带 `legacy`：应用仓库还留着 `.grok/skills/verify-*`。它不是手册。`missing` 时按缺手册处理，`found` 时手册照常可用；两种情况都只把 `hint` 原话转给用户，不要自己代读旧路径。迁移该搬、该先合再删、还是直接删，由 `lookup.py` 按目标路径是否已被占用判定并写进 `hint`；本文件不复述那些命令，你也不要自己拼——照抄 `hint`，别加删除动作。
 
 ## 缺手册
 
@@ -35,7 +37,7 @@ description: >
 | 用户能摸到的界面（Web / CLI / TUI / 桌面 / 主 API 路径） | `BLOCKED`。问一次：生成手册，或本 Issue 无界面可 skip。不要即兴点 UI，不要去 `.cursor` 找替身。 |
 | 明确无用户界面（纯库、内部重构），且 `S1` 已是可跑命令 | `skip`，表上写明「无用户路径」。 |
 
-禁止把「没有 `.cursor`」当成缺手册的理由；缺的是 `.grok/skills/verify-*`。
+禁止把「没有 `.cursor`」当成缺手册的理由；缺的是 `.agents/skills/verify-*`。仓库里只有旧 `.grok/skills/verify-*` 时同样算缺手册，让人迁移，不要替它读。
 
 ## 把 S1 对到功能文件
 
