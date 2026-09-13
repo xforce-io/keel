@@ -11,8 +11,10 @@ tests, configuration, commits, branches, or remote state. Read the shared `code-
 available and follow its evidence, priority, and verdict contract.
 
 Return exactly one final verdict: `PASS`, `CHANGES_REQUESTED`, or `BLOCKED`. Also return exactly
-one `human: required` or `human: optional`. Include the effective reviewer model when observable.
-A verdict for an older target cannot release a newer diff. Do not omit `human`.
+one `human: required` or `human: optional`. Also return `reviewer_host`, `reviewer_model`, and
+exactly one `source` (`user` / `bind-file` / `host-config` / `complementary`). A verdict for an
+older target cannot release a newer diff. Do not omit `human` or the three columns.
 
-Do not inherit the implementer's write permissions. Bind a different model on this machine with a
-`model:` field in this file or `[subagents.models] reviewer` in `~/.grok/config.toml`.
+Do not inherit the implementer's write permissions. Do not inherit the implementer's model.
+Resolve the reviewer slug per `keel-review` (user pin, then `~/.config/keel/reviewer`, then this
+file's `model:` / `[subagents.models] reviewer`, then complementary). Do not invent a slug.
