@@ -89,7 +89,7 @@ Accepted 里若用 lint、脚本、metadata、运行时检查能更稳地执行�
 
 - 现有 skill / AGENTS 改一行：直接打已展示的补丁；改指令后重跑检查器，确认链一致  
 - 大段新节、新 skill、`tune description`：按 skill 作者流程，不在本 skill 里即兴长文  
-- 应用仓库 `verify-*` 地图过时：改那对文件，不改 keel 插件  
+- 应用仓库 `.agents/skills/verify-*` 地图过时：改那对文件，不改 keel 插件  
 - 动 `keel-*`：仅当 cwd 是 keel 或证据就是交付机不好用  
 - Backlog Issue：写入前重查 origin/平台/重复；创建后停止。修复走单独的 `keel`  
 

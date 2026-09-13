@@ -616,6 +616,22 @@ class KeelVerifyLookupTests(unittest.TestCase):
             self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
             self.assertEqual(json.loads(result.stdout)["status"], "missing")
 
+    def test_keel_checkout_has_verify_keel_handbook(self) -> None:
+        result = self._run_lookup(ROOT)
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["status"], "found")
+        self.assertEqual([item["name"] for item in payload["handbooks"]], ["verify-keel"])
+        handbook = payload["handbooks"][0]
+        self.assertEqual(
+            Path(handbook["skill_file"]).resolve(),
+            (ROOT / ".agents" / "skills" / "verify-keel" / "SKILL.md").resolve(),
+        )
+        self.assertEqual(
+            sorted(handbook["feature_files"]),
+            ["doctor.md", "install.md", "uninstall.md"],
+        )
+
 
 class HandbookPathWordingTests(unittest.TestCase):
     DOCS = (

@@ -3,3 +3,6 @@ __pycache__/
 .DS_Store
 .pytest_cache/
 .venv/
+
+# keel-verify run evidence (local only, see .agents/skills/verify-keel/SKILL.md)
+.agents/verify-runs/
