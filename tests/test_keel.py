@@ -414,14 +414,18 @@ class KeelReflectContractTests(unittest.TestCase):
         self.assertIn("feat/{issue}-{short-desc}", ticket)
         self.assertIn("bugfix/{issue}-{short-desc}", ticket)
         self.assertIn("不自动 `route`", ticket)
+        self.assertIn("git checkout -b <name> <default-ref>", ticket)
+        self.assertIn("`title`、`description`", ticket)
         self.assertNotIn("create-github-issue", ticket.split("禁止别称")[0])
         issue = (ROOT / "skills" / "keel-issue" / "SKILL.md").read_text(encoding="utf-8")
         release = (ROOT / "skills" / "keel-release" / "SKILL.md").read_text(encoding="utf-8")
-        for text in (issue, release):
+        dev = (ROOT / "skills" / "keel-dev" / "SKILL.md").read_text(encoding="utf-8")
+        for text in (issue, release, dev):
             self.assertIn("BLOCKED", text)
             self.assertIn("feat/{issue}-*", text)
             self.assertIn("bugfix/{issue}-*", text)
-            self.assertIn("chore/*", text)
+        self.assertIn("chore/*", issue)
+        self.assertIn("手工", issue)
 
     def test_reflect_uses_three_lenses_and_approval(self) -> None:
         text = (ROOT / "skills" / "keel-reflect" / "SKILL.md").read_text(encoding="utf-8")

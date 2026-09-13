@@ -37,15 +37,16 @@ description: >
 
 3. **按平台创建**
    - **GitHub**：`gh issue create`。feature → `enhancement`（若有）；bugfix → `bug`（若有）。`gh` 未登录则停。
-   - **GitLab**：REST `POST {host}/api/v4/projects/:id/issues`，仅 `$GITLAB_API_TOKEN`。未设置则失败，不回退 `gh`，不创建半成品。
+   - **GitLab**：从 origin 解析 host 与 project path；`POST {host}/api/v4/projects/:id/issues`，`:id` 可用 URL-encoded path。字段只要 `title`、`description`（不要发 GitHub 的 `body`）。仅 `$GITLAB_API_TOKEN`。未设置则失败，不回退 `gh`，不创建半成品。
    - 取出 GitHub number / GitLab **iid**
 
 4. **建分支并切换**（Issue 创建成功之后）
+   - 基线：刚 fetch 的默认分支（`origin/HEAD` / `origin/main` / `origin/master`）。禁止从当前工作分支分出。
    - feature → `feat/{issue}-{short-desc}`
    - bugfix → `bugfix/{issue}-{short-desc}`
    - `{short-desc}`：小写 kebab-case，3–5 词，仅 `a-z` `0-9` `-`
    - 同名分支已存在 → `BLOCKED`，不覆盖、不改到默认分支上开发
-   - `git checkout -b ...`
+   - `git checkout -b <name> <default-ref>`
 
 5. 报告平台、Issue URL、编号、分支名。**停止。** 不要读 `keel` 去推进交付。
 

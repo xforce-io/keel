@@ -16,6 +16,6 @@ description: >
 4. 目标 Issue 含糊、或必需验收缺失时，只问一个问题。
 5. 缺 Issue 号就问，不是跳过发布。
 6. 后续增量接同一 Issue 时，先读 Issue 或 PR/MR 上最新的 `S1…Sn` 表。`pass` 行若本次可能碰到，当作保全检查，不要丢掉 Story id。
-7. **分支前缀。** 默认分支（`main` / `master` / `origin/HEAD`）只许定位。工作分支必须是 `feat/{issue}-*` 或 `bugfix/{issue}-*`，且 `{issue}` 等于目标 Issue 号。其它名字（`chore/*`、`cursor/*`、`fix/*`、无前缀非默认、号对不上）→ `BLOCKED`。不改名、不改道 `keel-ticket`、不重建分支。
+7. **分支前缀。** 默认分支（`main` / `master` / `origin/HEAD`）只许定位。工作分支必须是 `feat/{issue}-*` 或 `bugfix/{issue}-*`，且 `{issue}` 等于目标 Issue 号。其它名字（`chore/*`、`cursor/*`、`fix/*`、无前缀非默认、号对不上）→ `BLOCKED`。不改名、不改道 `keel-ticket`、不重建分支。下一步：人从默认分支手工 `git checkout -b feat/{issue}-…`（或 `bugfix/`）后重入 `keel-issue`。
 
 本环节产出：仓库、平台、Issue、验收、已完成阶段、下一合法环节。然后停，除非调用方是 `keel` 并继续路由。
