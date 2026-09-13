@@ -23,7 +23,7 @@ description: >
 | 2 | `keel-how` | 讲清将改现有子系统怎么工作（带出处） |
 | 3 | `keel-design` | 若设计门禁触发：提案并停在人工批准 |
 | 4 | `keel-dev` | 实现已批准范围，填写 `S1…Sn` |
-| 5 | `keel-verify` | 按应用仓库 `.grok/skills/verify-*` 驾驶手册与功能地图证明 S1 |
+| 5 | `keel-verify` | 按应用仓库 `.agents/skills/verify-*` 驾驶手册与功能地图证明 S1 |
 | 6 | `keel-review` | 独立审查；未 `PASS` 不得进入发布 |
 | 7 | `keel-release` | CI、PR/MR、合入；有 runbook 则部署与健康检查 |
 

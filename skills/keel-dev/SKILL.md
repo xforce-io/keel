@@ -20,4 +20,4 @@ description: >
 
 实现者自己跑的测试是候选门，不是验收。表必须来自冻结候选上的新跑（干净树）。`skip` 不是 pass：需要设计已允许的环境限制。缺行、`fail`、或把 skip 当完成，都不得宣称本环节完成。续做时先读 Issue 或 PR/MR 上最新表，不要只从代码反推状态。
 
-本环节不代替 `keel-verify` 或 `keel-review`。项目测试填表之后，真用户路径证明交给 `keel-verify`（应用仓库 `.grok/skills/verify-*`，不读 `.cursor`）。不要开或合 PR/MR，不要部署。
+本环节不代替 `keel-verify` 或 `keel-review`。项目测试填表之后，真用户路径证明交给 `keel-verify`（应用仓库 `.agents/skills/verify-*`，不读 `.cursor`，不认旧 `.grok/skills`）。不要开或合 PR/MR，不要部署。
