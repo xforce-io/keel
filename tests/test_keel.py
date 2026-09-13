@@ -477,6 +477,37 @@ class KeelReviewContractTests(unittest.TestCase):
         self.assertIn("CHANGES_REQUESTED", chunk)
         self.assertIn("keel-dev` → `keel-verify", chunk)
 
+    def test_verdict_requires_exactly_one_human_field(self) -> None:
+        review = (ROOT / "skills" / "keel-review" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("`human: required`", review)
+        self.assertIn("`human: optional`", review)
+        self.assertIn("审查未完成", review)
+        self.assertIn("不得补写", review)
+        reviewer = (ROOT / "agents" / "reviewer.md").read_text(encoding="utf-8")
+        self.assertIn("human: required", reviewer)
+        self.assertIn("human: optional", reviewer)
+
+    def test_hard_conditions_forbid_optional(self) -> None:
+        text = (ROOT / "skills" / "keel-review" / "SKILL.md").read_text(encoding="utf-8")
+        start = text.index("硬条件")
+        chunk = text[start:]
+        self.assertIn("SKILL.md", chunk)
+        self.assertIn("安装", chunk)
+        self.assertIn("鉴权", chunk)
+        self.assertIn("公开 CLI", chunk)
+        self.assertIn("`P0`", chunk)
+        self.assertIn("三轮", chunk)
+        self.assertIn("无法证明", chunk)
+        self.assertIn("不得 `optional`", chunk)
+
+    def test_release_requires_pass_and_optional(self) -> None:
+        release = (ROOT / "skills" / "keel-release" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("`human: optional`", release)
+        self.assertIn("`human: required`", release)
+        self.assertIn("BLOCKED", release)
+        review = (ROOT / "skills" / "keel-review" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("`PASS` 且 `human: optional`", review)
+
 
 class KeelVerifyLookupTests(unittest.TestCase):
     def _run_lookup(self, app_root: Path) -> subprocess.CompletedProcess[str]:
