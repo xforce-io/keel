@@ -15,6 +15,7 @@ from pathlib import Path
 
 SKILL_MD = "SKILL.md"
 FEATURES = "features"
+FEATURES_README = "README.md"
 GROK_SKILLS = (".grok", "skills")
 VERIFY_PREFIX = "verify-"
 
@@ -36,8 +37,27 @@ def _feature_files(features_dir: Path) -> tuple[Path, ...]:
     return tuple(files)
 
 
+def incomplete_handbooks(app_root: Path) -> dict[str, list[str]]:
+    """Map verify-* dirs that are missing required parts to the missing file names."""
+    skills = app_root.expanduser().resolve().joinpath(*GROK_SKILLS)
+    if not skills.is_dir():
+        return {}
+    problems: dict[str, list[str]] = {}
+    for child in sorted(skills.iterdir()):
+        if not child.is_dir() or not child.name.startswith(VERIFY_PREFIX):
+            continue
+        missing = [
+            str(relative)
+            for relative in (Path(SKILL_MD), Path(FEATURES), Path(FEATURES) / FEATURES_README)
+            if not (child / relative).exists()
+        ]
+        if missing:
+            problems[child.name] = missing
+    return problems
+
+
 def find_verify_handbooks(app_root: Path) -> tuple[VerifyHandbook, ...]:
-    """Return handbooks at <app_root>/.grok/skills/verify-*/ with SKILL.md and features/."""
+    """Return handbooks at <app_root>/.grok/skills/verify-*/ with SKILL.md, features/ and features/README.md."""
     root = app_root.expanduser().resolve()
     skills = root.joinpath(*GROK_SKILLS)
     if not skills.is_dir():
@@ -48,7 +68,7 @@ def find_verify_handbooks(app_root: Path) -> tuple[VerifyHandbook, ...]:
             continue
         skill_file = child / SKILL_MD
         features_dir = child / FEATURES
-        if not skill_file.is_file() or not features_dir.is_dir():
+        if not skill_file.is_file() or not (features_dir / FEATURES_README).is_file():
             continue
         found.append(
             VerifyHandbook(
@@ -90,7 +110,11 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     found = find_verify_handbooks(root)
     if not found:
-        print(json.dumps({"status": "missing"}, ensure_ascii=False))
+        payload: dict[str, object] = {"status": "missing"}
+        incomplete = incomplete_handbooks(root)
+        if incomplete:
+            payload["incomplete"] = incomplete
+        print(json.dumps(payload, ensure_ascii=False))
         return 1
     print(
         json.dumps(

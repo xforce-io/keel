@@ -22,7 +22,7 @@ description: >
 .grok/skills/verify-<app>/features/
 ```
 
-用本目录的 `lookup.py`（`python3 skills/keel-verify/lookup.py <app-root>`，或已安装 skill 目录里的同名文件）。它**不搜索 `.cursor`**。`.cursor/skills/verify-*` 即使存在也当作没有手册。
+用本目录的 `lookup.py`（`python3 skills/keel-verify/lookup.py <app-root>`，或已安装 skill 目录里的同名文件）。它**不搜索 `.cursor`**。`.cursor/skills/verify-*` 即使存在也当作没有手册。三件缺一不可：`SKILL.md`、`features/`、`features/README.md`；缺件的目录在输出 `incomplete` 里列出，按缺手册处理，不要补猜。
 
 - 找到一份：完整读取该 `SKILL.md`（Launch / Doctor / Drive / Evidence / Cleanup），再读 `features/README.md` 与本次要对的功能文件。
 - 找到多份：问哪一个 `verify-*`，不要猜。
