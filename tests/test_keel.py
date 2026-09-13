@@ -447,7 +447,7 @@ class KeelReflectContractTests(unittest.TestCase):
         self.assertIn("monastery", start)
         self.assertIn("先 `git checkout <默认短名>`", start)
         self.assertIn("gh pr list --head", start)
-        self.assertIn("无独有提交", start)
+        self.assertIn("git cherry -v", start)
         self.assertIn("不回退 `gh`", start)
         self.assertIn("禁止 `checkout origin/", start)
 

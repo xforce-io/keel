@@ -25,10 +25,10 @@ description: >
 4. Open Issue / PR：
    - GitHub：`gh issue list --state open`、`gh pr list --state open`
    - GitLab：从 origin 解析 host 与 project path；`GET {host}/api/v4/projects/:id/issues?state=opened` 与 `…/merge_requests?state=opened`，`:id` 可用 URL-encoded path。仅 `$GITLAB_API_TOKEN`。未设置则 `BLOCKED`，不回退 `gh`
-5. 残留枝：本地短名来自 `git branch --format='%(refname:short)'`。远程来自 `git branch -r`，去掉 `origin/` 前缀，**丢掉** `HEAD` / `origin/HEAD`。比较与删除一律用短名。对每一条（除默认短名）「已合入仍在」仅当下面**两条都成立**：
-   - 已合入信号：`git merge-base --is-ancestor <短名> origin/<默认短名>`，**或** GitHub `gh pr list --head <短名> --state merged` 非空，**或** GitLab merged MR 的 `source_branch` 等于该短名
-   - 无独有提交：`git log --oneline origin/<默认短名>..<短名>` 为空（本地不存在的远程短名用 `origin/<短名>` 做 log）
-   缺任一则算未合入，不准进残留表。当前分支若已合入仍列入残留；清时先 `git checkout <默认短名>` 再删，不要对着当前枝 `branch -d`。未合入的当前工作枝不列入残留。列出：已合入仍在、未合入、非法前缀（不是 `feat/*` / `bugfix/*` / 默认短名）。
+5. 残留枝：本地短名来自 `git branch --format='%(refname:short)'`。远程来自 `git branch -r`，去掉 `origin/` 前缀，**丢掉** `HEAD` / `origin/HEAD`。比较与删除一律用短名。本地不存在时比较对象用 `origin/<短名>`。「已合入仍在」只走下面**互斥两条之一**（默认短名除外）：
+   - **祖先**：`git merge-base --is-ancestor <短名> origin/<默认短名>`
+   - **squash**：GitHub `gh pr list --head <短名> --state merged` 非空（GitLab：merged MR 的 `source_branch` 等于该短名），**且** `git cherry -v origin/<默认短名> <短名>` 没有以 `+` 开头的行
+   两条都不成立 → 未合入，不准进残留表。当前分支若已合入仍列入残留；清时先 `git checkout <默认短名>` 再删，不要对着当前枝 `branch -d`。未合入的当前工作枝不列入残留。列出：已合入仍在、未合入、非法前缀（不是 `feat/*` / `bugfix/*` / 默认短名）。
 6. 输出一张表，然后停（除非本轮明确说清）：
 
 | 类 | 内容 |
@@ -47,10 +47,10 @@ description: >
 只删表里「已合入仍在」的枝（短名）：
 
 - 若其中含当前分支：先 `git checkout <默认短名>`，再删
-- 本地：祖先已在默认分支用 `git branch -d`；仅 squash 信号 + 无独有提交用 `-D`
+- 本地：祖先路径用 `git branch -d`；squash 路径用 `-D`
 - 远程：`git push origin --delete <短名>`
 
-不删：当前未合入工作枝、默认短名、`git log origin/<默认短名>..<短名>` 非空的枝。不关票、不合 PR。删完再打一次只读表。
+不删：当前未合入工作枝、默认短名、`git cherry` 仍有 `+` 行的枝。不关票、不合 PR。删完再打一次只读表。
 
 ## 完成
 
