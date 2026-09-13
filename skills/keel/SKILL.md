@@ -2,10 +2,11 @@
 name: keel
 description: >
   Use when the user says keel, /keel, 处理 Issue, 设计 Issue, 开发 Issue,
-  端到端完成, 端到端改, 开票, 建 Issue, 跟踪这个需求, or asks to ship, merge,
-  or continue a guarded delivery lifecycle. Routes to stage skills or to
-  keel-ticket when there is no Issue yet and the user wants to file one.
-  Do not use for isolated code review or post-task reflection.
+  端到端完成, 端到端改, 开票, 建 Issue, 跟踪这个需求, keel-start, code start,
+  打开这个项目, 待办, 分支什么情况, or asks to ship, merge, or continue a
+  guarded delivery lifecycle. Routes to stage skills, or to keel-ticket /
+  keel-start when those companion skills apply. Do not use for isolated
+  code review, post-task reflection, or monastery.
 ---
 
 # keel
@@ -34,9 +35,10 @@ description: >
 
 ## 选择模式
 
-在「先读 `keel-issue`」之前先看有没有 Issue 号、意图是不是开票：
+在「先读 `keel-issue`」之前先看意图是不是进仓或开票：
 
-- **已有 Issue N**，或续跑这张票 → 先读 `keel-issue`（本会话已定位过则可 `skip: 已定位`）。然后按下述 mode。
+- **打开项目 / 待办 / 分支什么情况 / code start / `keel-start`** → 只读 `keel-start`，停。不要进入 route / design / dev / end-to-end，不要先扫全仓再处理 Issue。
+- **已有 Issue N**，或续跑这张票 → 先读 `keel-issue`（本会话已定位过则可 `skip: 已定位`）。然后按下述 mode。不要先跑 `keel-start`。
 - **没有 Issue 号**，且意图是开票 / 建 Issue / 跟踪需求 / `keel-ticket` → 只读 `keel-ticket`，建完停。不要进入 route / design / dev / end-to-end。
 - **没有 Issue 号**，且意图是处理 / 设计 / 开发 / 端到端 → 只读 `keel-issue`（它会问号）。禁止改道 `keel-ticket` 去建票。
 
@@ -56,3 +58,5 @@ description: >
 沉淀不在本状态机内。用户说 `keel-reflect` / `reflection` / 复盘时，再完整读取 `keel-reflect`。不要在端到端结束时默认跑复盘。
 
 建票不在本状态机内。用户说 `keel-ticket` / 开票 / 建 Issue 时，再完整读取 `keel-ticket`。建完不默认 `route`。
+
+进仓不在本状态机内。用户说 `keel-start` / code start / 打开这个项目 / 待办时，再完整读取 `keel-start`。看完不默认 `route`。不调用 monastery。
