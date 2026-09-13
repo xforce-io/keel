@@ -21,6 +21,7 @@ STAGE_SKILLS = (
     "keel-review",
     "keel-release",
     "keel-reflect",
+    "keel-ticket",
 )
 LOOKUP = ROOT / "skills" / "keel-verify" / "lookup.py"
 
@@ -354,6 +355,7 @@ class KeelHowContractTests(unittest.TestCase):
             ],
         )
         self.assertNotIn("keel-reflect", order)
+        self.assertNotIn("keel-ticket", order)
         router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("`keel-how`（可按该环节 skip）→ `keel-design`", router)
         self.assertIn("`keel-how`（可按该环节 skip）→ `keel-dev`", router)
@@ -396,6 +398,30 @@ class KeelReflectContractTests(unittest.TestCase):
         self.assertNotIn("keel-reflect", _router_stage_order())
         self.assertIn("沉淀不在本状态机内", router)
         self.assertIn("不要在端到端结束时默认跑复盘", router)
+
+    def test_ticket_is_not_a_delivery_stage(self) -> None:
+        router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertNotIn("keel-ticket", _router_stage_order())
+        self.assertIn("建票不在本状态机内", router)
+        self.assertIn("建完不默认 `route`", router)
+        self.assertIn("禁止改道 `keel-ticket`", router)
+        glossary = (ROOT / "docs" / "glossary.md").read_text(encoding="utf-8")
+        self.assertRegex(
+            glossary,
+            re.compile(r"^\| keel-ticket \|.*不是交付环节", re.M),
+        )
+        ticket = (ROOT / "skills" / "keel-ticket" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("feat/{issue}-{short-desc}", ticket)
+        self.assertIn("bugfix/{issue}-{short-desc}", ticket)
+        self.assertIn("不自动 `route`", ticket)
+        self.assertNotIn("create-github-issue", ticket.split("禁止别称")[0])
+        issue = (ROOT / "skills" / "keel-issue" / "SKILL.md").read_text(encoding="utf-8")
+        release = (ROOT / "skills" / "keel-release" / "SKILL.md").read_text(encoding="utf-8")
+        for text in (issue, release):
+            self.assertIn("BLOCKED", text)
+            self.assertIn("feat/{issue}-*", text)
+            self.assertIn("bugfix/{issue}-*", text)
+            self.assertIn("chore/*", text)
 
     def test_reflect_uses_three_lenses_and_approval(self) -> None:
         text = (ROOT / "skills" / "keel-reflect" / "SKILL.md").read_text(encoding="utf-8")
@@ -629,7 +655,7 @@ class KeelVerifyLookupTests(unittest.TestCase):
         )
         self.assertEqual(
             sorted(handbook["feature_files"]),
-            ["doctor.md", "install.md", "uninstall.md"],
+            ["doctor.md", "install.md", "ticket.md", "uninstall.md"],
         )
 
 

@@ -12,6 +12,8 @@ description: >
 
 进入前先核对设计门禁：按有效 `AGENTS.md` 的 L1/L2 触发判断本 Issue 是否需要设计。需要而 Issue / PR·MR 上没有人工批准的设计，→ `BLOCKED`，交回 `keel-design`。「开发 Issue N」这句话不是批准，`keel-how` 的产出也不是批准。
 
+不得在默认分支上实现本 Issue。工作分支必须是 `feat/{issue}-*` 或 `bugfix/{issue}-*`，且 `{issue}` 等于本 Issue 号，否则 `BLOCKED`。
+
 实现与验收标准可追踪。开发中跑聚焦检查，送审前跑项目要求的套件。优先用项目已有工具（具名 pytest、套件脚本、进程内 HTTP 客户端）。不要新增项目没有的证据文件、截图工厂或额外 E2E 层。
 
 独立审查前，为这个 SHA 写验收表，覆盖本 Issue 每条 `S1…Sn`，以及本次可能碰到的、先前已 pass 的 Story：

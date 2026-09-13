@@ -2,9 +2,10 @@
 name: keel
 description: >
   Use when the user says keel, /keel, 处理 Issue, 设计 Issue, 开发 Issue,
-  端到端完成, 端到端改, or asks to ship, merge, or continue a guarded delivery
-  lifecycle. Routes to stage skills; do not use for isolated code review or
-  post-task reflection.
+  端到端完成, 端到端改, 开票, 建 Issue, 跟踪这个需求, or asks to ship, merge,
+  or continue a guarded delivery lifecycle. Routes to stage skills or to
+  keel-ticket when there is no Issue yet and the user wants to file one.
+  Do not use for isolated code review or post-task reflection.
 ---
 
 # keel
@@ -33,7 +34,13 @@ description: >
 
 ## 选择模式
 
-先读 `keel-issue`（本会话已定位过则可 `skip: 已定位`）。然后：
+在「先读 `keel-issue`」之前先看有没有 Issue 号、意图是不是开票：
+
+- **已有 Issue N**，或续跑这张票 → 先读 `keel-issue`（本会话已定位过则可 `skip: 已定位`）。然后按下述 mode。
+- **没有 Issue 号**，且意图是开票 / 建 Issue / 跟踪需求 / `keel-ticket` → 只读 `keel-ticket`，建完停。不要进入 route / design / dev / end-to-end。
+- **没有 Issue 号**，且意图是处理 / 设计 / 开发 / 端到端 → 只读 `keel-issue`（它会问号）。禁止改道 `keel-ticket` 去建票。
+
+已定位之后：
 
 - **route** — 「处理 Issue N」：只执行下一合法环节一份，然后停。下一刀是设计或实现、且还没有对将改子系统的机制说明时，下一合法环节是 `keel-how`。实现已做、尚未按手册在真路径上证明时，下一合法环节是 `keel-verify`。
 - **design** — 「设计 Issue N」：`keel-how`（可按该环节 skip）→ `keel-design`，停在人工批准。
@@ -47,3 +54,5 @@ description: >
 说出停在哪一阶段、读过哪些环节 skill。带上该阶段要求的证据（验收表、审查结果、PR/MR 或合入 SHA、若有的部署结果）。未合入则说 `BLOCKED` 和那一个下一步决策。门禁挡住时，把挡住说清楚才算有效。
 
 沉淀不在本状态机内。用户说 `keel-reflect` / `reflection` / 复盘时，再完整读取 `keel-reflect`。不要在端到端结束时默认跑复盘。
+
+建票不在本状态机内。用户说 `keel-ticket` / 开票 / 建 Issue 时，再完整读取 `keel-ticket`。建完不默认 `route`。
