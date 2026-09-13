@@ -445,6 +445,9 @@ class KeelReflectContractTests(unittest.TestCase):
         self.assertIn("仅当本轮明确说「清」", start)
         self.assertIn("不调用", start)
         self.assertIn("monastery", start)
+        self.assertIn("先切默认分支再删", start)
+        self.assertIn("gh pr list --head", start)
+        self.assertIn("不回退 `gh`", start)
 
     def test_reflect_uses_three_lenses_and_approval(self) -> None:
         text = (ROOT / "skills" / "keel-reflect" / "SKILL.md").read_text(encoding="utf-8")
