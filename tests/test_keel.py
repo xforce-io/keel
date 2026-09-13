@@ -505,8 +505,30 @@ class KeelReviewContractTests(unittest.TestCase):
         self.assertIn("`human: optional`", release)
         self.assertIn("`human: required`", release)
         self.assertIn("BLOCKED", release)
+        self.assertIn("reviewer_host", release)
         review = (ROOT / "skills" / "keel-review" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("`PASS` 且 `human: optional`", review)
+
+    def test_review_model_resolves_from_bind_not_inherit(self) -> None:
+        review = (ROOT / "skills" / "keel-review" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("**Cursor：**", review)
+        self.assertIn("`~/.config/keel/reviewer`", review)
+        self.assertIn("禁止 `inherit`", review)
+        self.assertIn("禁止未声明自选", review)
+        self.assertIn("reviewer_host", review)
+        self.assertIn("reviewer_model", review)
+        self.assertIn("`bind-file`", review)
+        self.assertNotIn("claude-opus", review)
+        self.assertNotIn("grok-4.6", review)
+        reviewer = (ROOT / "agents" / "reviewer.md").read_text(encoding="utf-8")
+        self.assertIn("reviewer_host", reviewer)
+        self.assertIn("`~/.config/keel/reviewer`", reviewer)
+
+    def test_verify_maintenance_regression_skips_review(self) -> None:
+        text = (ROOT / "skills" / "keel-verify" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("## 维护回归（无 Issue / 全图）", text)
+        self.assertIn("完成表**不**交给 `keel-review`", text)
+        self.assertIn(".grok/verify-runs/regression/", text)
 
 
 class KeelVerifyLookupTests(unittest.TestCase):
