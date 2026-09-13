@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -24,18 +25,55 @@ STAGE_SKILLS = (
 LOOKUP = ROOT / "skills" / "keel-verify" / "lookup.py"
 
 
-def run_keel(home: Path, *args: str) -> subprocess.CompletedProcess[str]:
+FAKE_LOCAL_SKILL = """#!/bin/sh
+case "$1" in
+  refresh) echo refreshed ;;
+  find) [ "$2" = "code-review" ] && echo /fake/code-review/SKILL.md || exit 1 ;;
+  *) exit 2 ;;
+esac
+"""
+
+
+def fake_tools_dir(home: Path) -> Path:
+    tools = home / "fake-tools"
+    tools.mkdir(exist_ok=True)
+    exe = tools / "local-skill"
+    if not exe.exists():
+        exe.write_text(FAKE_LOCAL_SKILL, encoding="utf-8")
+        exe.chmod(0o755)
+    return tools
+
+
+def run_keel(
+    home: Path,
+    *args: str,
+    cli: Path = CLI,
+    root: Path | None = ROOT,
+    with_local_skill: bool = True,
+) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env["KEEL_HOME"] = str(home)
-    env["KEEL_ROOT"] = str(ROOT)
-    env["PATH"] = str(ROOT / "bin") + os.pathsep + env.get("PATH", "")
+    env.pop("KEEL_ROOT", None)
+    if root is not None:
+        env["KEEL_ROOT"] = str(root)
+    path = [str(ROOT / "bin"), env.get("PATH", "")]
+    if with_local_skill:
+        path.insert(0, str(fake_tools_dir(home)))
+    env["PATH"] = os.pathsep.join(path)
     return subprocess.run(
-        [sys.executable, str(CLI), "--home", str(home), "--bin-dir", str(home / ".local" / "bin"), *args],
+        [sys.executable, str(cli), "--home", str(home), "--bin-dir", str(home / ".local" / "bin"), *args],
         check=False,
         capture_output=True,
         text=True,
         env=env,
     )
+
+
+def copy_checkout(dest: Path) -> Path:
+    import shutil
+
+    shutil.copytree(ROOT, dest, ignore=shutil.ignore_patterns(".git", "__pycache__"))
+    return dest
 
 
 class KeelInstallTests(unittest.TestCase):
@@ -72,11 +110,136 @@ class KeelInstallTests(unittest.TestCase):
             dest.mkdir(parents=True)
             (dest / "SKILL.md").write_text("---\nname: other\n---\n", encoding="utf-8")
             result = run_keel(home, "install")
-            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
-            self.assertIn("skip", result.stdout)
+            self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+            self.assertIn("library/keel: skip", result.stdout)
+            self.assertIn("1 项未完成", result.stderr)
             self.assertEqual((dest / "SKILL.md").read_text(encoding="utf-8"), "---\nname: other\n---\n")
             sibling = home / ".local" / "share" / "agent-skills" / "library" / "keel-design"
             self.assertTrue(sibling.is_symlink())
+            removed = run_keel(home, "uninstall")
+            self.assertIn("library/keel: skip-foreign", removed.stdout)
+            self.assertTrue((dest / "SKILL.md").is_file())
+
+    def test_install_reclaims_dangling_symlink(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            home = Path(raw)
+            library = home / ".local" / "share" / "agent-skills" / "library"
+            library.mkdir(parents=True)
+            (library / "keel").symlink_to(home / "gone" / "skills" / "keel")
+            result = run_keel(home, "install")
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+            self.assertEqual((library / "keel").resolve(), (ROOT / "skills" / "keel").resolve())
+
+    def test_install_replaces_link_into_moved_checkout(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            home = Path(raw)
+            old = copy_checkout(home / "old-keel")
+            first = run_keel(home, "install", cli=old / "bin" / "keel", root=old)
+            self.assertEqual(first.returncode, 0, first.stderr + first.stdout)
+            library = home / ".local" / "share" / "agent-skills" / "library" / "keel"
+            self.assertEqual(library.resolve(), (old / "skills" / "keel").resolve())
+            second = run_keel(home, "install")
+            self.assertEqual(second.returncode, 0, second.stderr + second.stdout)
+            self.assertEqual(library.resolve(), (ROOT / "skills" / "keel").resolve())
+            self.assertEqual((home / ".local" / "bin" / "keel").resolve(), CLI.resolve())
+
+    def test_install_fails_fast_outside_checkout_without_state(self) -> None:
+        import shutil
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            home = Path(raw)
+            stray = home / "stray-keel"
+            stray.mkdir()
+            shutil.copy2(CLI, stray / "keel")
+            result = run_keel(home, "doctor", cli=stray / "keel", root=None)
+            self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+            self.assertIn("not inside a keel checkout", result.stdout + result.stderr)
+
+
+class KeelCopyModeTests(unittest.TestCase):
+    def _install_copy(self, home: Path, checkout: Path) -> subprocess.CompletedProcess[str]:
+        return run_keel(home, "install", "--copy", cli=checkout / "bin" / "keel", root=checkout)
+
+    def test_copy_upgrade_refreshes_and_uninstall_removes(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            home = Path(raw)
+            (home / ".grok").mkdir()
+            checkout = copy_checkout(home / "checkout")
+            first = self._install_copy(home, checkout)
+            self.assertEqual(first.returncode, 0, first.stderr + first.stdout)
+            library = home / ".local" / "share" / "agent-skills" / "library" / "keel-verify"
+            self.assertFalse(library.is_symlink())
+            self.assertTrue((library / "lookup.py").is_file())
+            state = json.loads((home / ".config" / "keel" / "state.json").read_text(encoding="utf-8"))
+            self.assertEqual(Path(state["root"]), checkout)
+            self.assertIn(str(library), state["copies"])
+
+            for relative in ("skills/keel-verify/SKILL.md", "skills/keel-verify/lookup.py", "agents/reviewer.md"):
+                with (checkout / relative).open("a", encoding="utf-8") as handle:
+                    handle.write("\n# upgraded\n")
+            second = self._install_copy(home, checkout)
+            self.assertEqual(second.returncode, 0, second.stderr + second.stdout)
+            self.assertIn("library/keel-verify: copy", second.stdout)
+            self.assertIn("# upgraded", (library / "SKILL.md").read_text(encoding="utf-8"))
+            self.assertIn("# upgraded", (library / "lookup.py").read_text(encoding="utf-8"))
+            self.assertIn(
+                "# upgraded",
+                (home / ".grok" / "agents" / "reviewer.md").read_text(encoding="utf-8"),
+            )
+
+            removed = run_keel(home, "uninstall", cli=checkout / "bin" / "keel", root=checkout)
+            self.assertEqual(removed.returncode, 0, removed.stderr + removed.stdout)
+            self.assertIn("library/keel-verify: removed", removed.stdout)
+            self.assertFalse(library.exists())
+            self.assertFalse((home / ".grok" / "agents" / "reviewer.md").exists())
+            self.assertFalse((home / ".local" / "bin" / "keel").exists())
+            self.assertFalse((home / ".config" / "keel" / "state.json").exists())
+
+    def test_copied_cli_finds_checkout_from_state(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            home = Path(raw)
+            checkout = copy_checkout(home / "checkout")
+            first = self._install_copy(home, checkout)
+            self.assertEqual(first.returncode, 0, first.stderr + first.stdout)
+            installed_cli = home / ".local" / "bin" / "keel"
+            self.assertFalse(installed_cli.is_symlink())
+            doctor = run_keel(home, "doctor", cli=installed_cli, root=None)
+            self.assertEqual(doctor.returncode, 0, doctor.stderr + doctor.stdout)
+            self.assertIn(f"root: {checkout}", doctor.stdout)
+            again = run_keel(home, "install", "--copy", cli=installed_cli, root=None)
+            self.assertEqual(again.returncode, 0, again.stderr + again.stdout)
+
+            import shutil
+
+            shutil.rmtree(checkout)
+            gone = run_keel(home, "doctor", cli=installed_cli, root=None)
+            self.assertEqual(gone.returncode, 1, gone.stderr + gone.stdout)
+            self.assertIn("is gone", gone.stdout + gone.stderr)
+
+    def test_symlink_then_copy_then_symlink_swaps_cleanly(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            home = Path(raw)
+            library = home / ".local" / "share" / "agent-skills" / "library" / "keel"
+            self.assertEqual(run_keel(home, "install").returncode, 0)
+            self.assertTrue(library.is_symlink())
+            self.assertEqual(run_keel(home, "install", "--copy").returncode, 0)
+            self.assertFalse(library.is_symlink())
+            self.assertTrue((library / "SKILL.md").is_file())
+            self.assertEqual(run_keel(home, "install").returncode, 0)
+            self.assertTrue(library.is_symlink())
+            state = json.loads((home / ".config" / "keel" / "state.json").read_text(encoding="utf-8"))
+            self.assertNotIn(str(library), state["copies"])
 
     def test_uninstall_removes_our_links_only(self) -> None:
         import tempfile
@@ -103,17 +266,30 @@ class KeelInstallTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as raw:
             home = Path(raw)
             missing = run_keel(home, "doctor")
-            self.assertEqual(missing.returncode, 0, missing.stderr + missing.stdout)
+            self.assertEqual(missing.returncode, 1, missing.stderr + missing.stdout)
             self.assertIn("未安装", missing.stdout)
+            self.assertIn("项需要处理", missing.stderr)
             run_keel(home, "install")
             ok = run_keel(home, "doctor")
             self.assertEqual(ok.returncode, 0, ok.stderr + ok.stdout)
-            self.assertIn("library/keel:", ok.stdout)
+            self.assertIn("library/keel: symlink", ok.stdout)
             self.assertIn("library/keel-design:", ok.stdout)
             self.assertIn("library/keel-verify:", ok.stdout)
             self.assertIn("library/keel-how:", ok.stdout)
             self.assertIn("library/keel-reflect:", ok.stdout)
-            self.assertNotIn("library: 未安装", ok.stdout)
+            self.assertIn("code-review: ok", ok.stdout)
+            self.assertNotIn("未安装", ok.stdout)
+
+    def test_doctor_flags_missing_local_skill_and_code_review(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            home = Path(raw)
+            run_keel(home, "install")
+            result = run_keel(home, "doctor", with_local_skill=False)
+            self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+            self.assertIn("local-skill: ⚠ 未在 PATH", result.stdout)
+            self.assertIn("code-review", result.stdout)
 
 
 class KeelReviewerAgentTests(unittest.TestCase):
@@ -197,6 +373,21 @@ class KeelHowContractTests(unittest.TestCase):
         self.assertNotIn("grok-4.6-fast-xhigh", how)
         self.assertNotIn(".grok/skills/verify-", how)
         self.assertIn("不是 `keel-verify`", how)
+
+
+class KeelDesignGateContractTests(unittest.TestCase):
+    def test_dev_mode_cannot_bypass_design_approval(self) -> None:
+        router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
+        start = router.index("- **dev**")
+        chunk = router[start : router.index("\n", start)]
+        self.assertIn("keel-design", chunk)
+        self.assertIn("BLOCKED", chunk)
+        dev = (ROOT / "skills" / "keel-dev" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("设计门禁", dev)
+        self.assertIn("BLOCKED", dev)
+        self.assertIn("keel-design", dev)
+        glossary = (ROOT / "docs" / "glossary.md").read_text(encoding="utf-8")
+        self.assertRegex(glossary, re.compile(r"^\| dev \|.*keel-design.*不绕过", re.M))
 
 
 class KeelReflectContractTests(unittest.TestCase):
@@ -283,6 +474,22 @@ class KeelVerifyLookupTests(unittest.TestCase):
             self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
             payload = json.loads(result.stdout)
             self.assertEqual(payload["status"], "missing")
+
+    def test_grok_handbook_without_features_readme_is_incomplete(self) -> None:
+        import json
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            app = Path(raw)
+            grok = app / ".grok" / "skills" / "verify-notes"
+            (grok / "features").mkdir(parents=True)
+            (grok / "SKILL.md").write_text("# notes\n", encoding="utf-8")
+            (grok / "features" / "create-note.md").write_text("# create\n", encoding="utf-8")
+            result = self._run_lookup(app)
+            self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["status"], "missing")
+            self.assertEqual(payload["incomplete"], {"verify-notes": ["features/README.md"]})
 
     def test_grok_skill_without_features_is_missing(self) -> None:
         import json

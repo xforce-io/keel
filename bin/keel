@@ -4,58 +4,111 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 CLI_NAME = "keel"
 SKILL_MD = "SKILL.md"
+STATE_RELATIVE = Path(".config") / "keel" / "state.json"
+REVIEW_CONTRACT_SKILL = "code-review"
+
+ABSENT = "absent"
+OURS = "ours"
+FOREIGN = "foreign"
 
 
-def repo_root() -> Path:
-    env = os.environ.get("KEEL_ROOT")
-    if env:
-        return Path(env).expanduser().resolve()
-    return Path(__file__).resolve().parent.parent
+def isKeelCheckout(root: Path) -> bool:
+    return (root / "bin" / CLI_NAME).is_file() and (root / "skills").is_dir()
 
 
-def list_agents(root: Path | None = None) -> list[Path]:
-    agents = (root or repo_root()) / "agents"
-    if not agents.is_dir():
-        return []
-    return sorted(
-        path
-        for path in agents.iterdir()
-        if path.is_file() and path.suffix == ".md"
-    )
-
-
-def grok_agent_dest(home: Path, src: Path) -> Path:
-    return home / ".grok" / "agents" / src.name
-
-
-def list_skills(root: Path | None = None) -> list[Path]:
-    skills = (root or repo_root()) / "skills"
-    if not skills.is_dir():
-        raise FileNotFoundError(f"找不到 {skills}")
-    found = sorted(
-        path
-        for path in skills.iterdir()
-        if path.is_dir() and (path / SKILL_MD).is_file()
-    )
-    if not found:
-        raise FileNotFoundError(f"{skills} 下没有 SKILL.md")
-    return found
-
-
-def home_dir() -> Path:
+def homeDir(override: str | None) -> Path:
+    if override:
+        return Path(override).expanduser().resolve()
     env = os.environ.get("KEEL_HOME")
     if env:
         return Path(env).expanduser().resolve()
     return Path.home()
+
+
+@dataclass
+class State:
+    """Machine-local record of what keel copied; symlinks identify themselves."""
+
+    path: Path
+    root: str | None = None
+    copies: set[str] = field(default_factory=set)
+
+    @classmethod
+    def load(cls, home: Path) -> "State":
+        path = home / STATE_RELATIVE
+        if not path.is_file():
+            return cls(path=path)
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise RuntimeError(f"Corrupt keel state file {path}: {exc}") from exc
+        return cls(path=path, root=data.get("root"), copies=set(data.get("copies", [])))
+
+    def save(self) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {"root": self.root, "copies": sorted(self.copies)}
+        self.path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    def delete(self) -> None:
+        if self.path.is_file():
+            self.path.unlink()
+
+    def isCopy(self, dest: Path) -> bool:
+        return str(dest) in self.copies
+
+
+def repoRoot(state: State) -> Path:
+    env = os.environ.get("KEEL_ROOT")
+    if env:
+        root = Path(env).expanduser().resolve()
+        if not isKeelCheckout(root):
+            raise FileNotFoundError(f"KEEL_ROOT={root} is not a keel checkout (needs bin/keel and skills/)")
+        return root
+    adjacent = Path(__file__).resolve().parent.parent
+    if isKeelCheckout(adjacent):
+        return adjacent
+    if state.root:
+        recorded = Path(state.root)
+        if isKeelCheckout(recorded):
+            return recorded
+        raise FileNotFoundError(
+            f"Recorded keel checkout {recorded} (from {state.path}) is gone; "
+            "re-run <checkout>/bin/keel install or set KEEL_ROOT"
+        )
+    raise FileNotFoundError(
+        f"{Path(__file__).resolve()} is not inside a keel checkout; run <checkout>/bin/keel install or set KEEL_ROOT"
+    )
+
+
+def listAgents(root: Path) -> list[Path]:
+    agents = root / "agents"
+    if not agents.is_dir():
+        return []
+    return sorted(path for path in agents.iterdir() if path.is_file() and path.suffix == ".md")
+
+
+def grokAgentDest(home: Path, src: Path) -> Path:
+    return home / ".grok" / "agents" / src.name
+
+
+def listSkills(root: Path) -> list[Path]:
+    skills = root / "skills"
+    if not skills.is_dir():
+        raise FileNotFoundError(f"Missing skills directory {skills}")
+    found = sorted(path for path in skills.iterdir() if path.is_dir() and (path / SKILL_MD).is_file())
+    if not found:
+        raise FileNotFoundError(f"No SKILL.md found under {skills}")
+    return found
 
 
 @dataclass(frozen=True)
@@ -78,112 +131,83 @@ def hosts(home: Path) -> tuple[Host, ...]:
     )
 
 
-def _same_skill(dest: Path, src: Path) -> bool:
-    dest_md = dest / SKILL_MD
-    src_md = src / SKILL_MD
-    if not dest_md.is_file() or not src_md.is_file():
-        return False
+def linkTarget(dest: Path) -> Path:
+    target = Path(os.readlink(dest))
+    return target if target.is_absolute() else dest.parent / target
+
+
+def _pointsIntoKeel(dest: Path, src: Path, kind: str) -> bool:
+    """A live symlink is ours when it targets <any keel checkout>/<kind>/<same name>."""
+    target = linkTarget(dest)
     try:
-        if dest.resolve() == src.resolve():
+        if target.resolve() == src.resolve():
             return True
     except OSError:
-        pass
-    try:
-        return dest_md.read_bytes() == src_md.read_bytes()
-    except OSError:
         return False
+    return target.name == src.name and target.parent.name == kind and isKeelCheckout(target.parent.parent)
 
 
-def _same_file(dest: Path, src: Path) -> bool:
-    if dest.is_dir() or src.is_dir() or not src.is_file():
-        return False
+def ownership(dest: Path, src: Path, kind: str, state: State) -> str:
     if not dest.exists() and not dest.is_symlink():
-        return False
+        return ABSENT
+    if dest.is_symlink():
+        # A dangling link protects nothing; reclaim it instead of blocking the install.
+        if not dest.exists():
+            return OURS
+        return OURS if _pointsIntoKeel(dest, src, kind) else FOREIGN
+    return OURS if state.isCopy(dest) else FOREIGN
+
+
+def removePath(dest: Path) -> None:
+    if dest.is_symlink() or dest.is_file():
+        dest.unlink()
+    elif dest.is_dir():
+        shutil.rmtree(dest)
+
+
+def _symlink(src: Path, dest: Path) -> None:
     try:
-        if dest.is_file() and dest.resolve() == src.resolve():
-            return True
-    except OSError:
-        pass
-    try:
-        return dest.is_file() and dest.read_bytes() == src.read_bytes()
-    except OSError:
-        return False
+        dest.symlink_to(src, target_is_directory=src.is_dir())
+    except OSError as exc:
+        raise OSError(f"Cannot create symlink {dest} -> {src}: {exc}; re-run with --copy") from exc
 
 
-def _is_our_link(dest: Path, src: Path) -> bool:
-    if not dest.is_symlink():
-        return False
-    try:
-        return dest.resolve() == src.resolve()
-    except OSError:
-        return False
-
-
-def link_or_copy(src: Path, dest: Path, *, copy: bool) -> str:
+def mount(src: Path, dest: Path, kind: str, state: State, *, copy: bool) -> str:
+    own = ownership(dest, src, kind, state)
+    if own == FOREIGN:
+        return "skip-exists"
+    src = src.resolve()
+    if own == OURS:
+        if not copy and dest.is_symlink() and dest.exists() and dest.resolve() == src:
+            return "ok"
+        removePath(dest)
+        state.copies.discard(str(dest))
     dest.parent.mkdir(parents=True, exist_ok=True)
-    src_res = src.resolve()
-    if dest.is_symlink() or dest.exists():
-        if _is_our_link(dest, src_res) or _same_skill(dest, src_res):
-            if copy and dest.is_symlink():
-                dest.unlink()
-            elif not copy and dest.is_symlink() and dest.resolve() == src_res:
-                return "ok"
-            elif not copy and dest.exists() and not dest.is_symlink():
-                if _same_skill(dest, src_res):
-                    return "ok"
-        elif dest.exists() or dest.is_symlink():
-            if not _is_our_link(dest, src_res) and not _same_skill(dest, src_res):
-                return "skip-exists"
-        if dest.is_symlink():
-            dest.unlink()
-        elif dest.is_dir():
-            shutil.rmtree(dest)
-        elif dest.exists():
-            dest.unlink()
     if copy:
-        shutil.copytree(src_res, dest)
-        return "copy"
-    try:
-        dest.symlink_to(src_res, target_is_directory=True)
-        return "symlink"
-    except OSError:
-        shutil.copytree(src_res, dest)
-        return "copy"
-
-
-def link_or_copy_file(src: Path, dest: Path, *, copy: bool) -> str:
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    src_res = src.resolve()
-    if dest.is_symlink() or dest.exists():
-        if _is_our_link(dest, src_res) or _same_file(dest, src_res):
-            if copy and dest.is_symlink():
-                dest.unlink()
-            elif not copy and dest.is_symlink():
-                try:
-                    if dest.resolve() == src_res:
-                        return "ok"
-                except OSError:
-                    dest.unlink()
-            elif dest.is_file() and _same_file(dest, src_res):
-                return "ok"
+        if src.is_dir():
+            shutil.copytree(src, dest)
         else:
-            return "skip-exists"
-        if dest.is_symlink() or dest.is_file():
-            dest.unlink()
-        else:
-            return "skip-exists"
-    if copy:
-        shutil.copy2(src_res, dest)
+            shutil.copy2(src, dest)
+            if kind == "bin":
+                dest.chmod(0o755)
+        state.copies.add(str(dest))
         return "copy"
-    try:
-        dest.symlink_to(src_res)
-        return "symlink"
-    except OSError:
-        shutil.copy2(src_res, dest)
-        return "copy"
+    _symlink(src, dest)
+    return "symlink"
 
 
-def _frontmatter_field(path: Path, key: str) -> str | None:
+def unmount(dest: Path, src: Path, kind: str, state: State) -> str:
+    own = ownership(dest, src, kind, state)
+    if own == ABSENT:
+        return "absent"
+    if own == FOREIGN:
+        return "skip-foreign"
+    removePath(dest)
+    state.copies.discard(str(dest))
+    return "removed"
+
+
+def frontmatterField(path: Path, key: str) -> str | None:
     try:
         text = path.read_text(encoding="utf-8")
     except OSError:
@@ -201,185 +225,132 @@ def _frontmatter_field(path: Path, key: str) -> str | None:
     return None
 
 
-def _agent_status_line(dest: Path, src: Path) -> str:
-    if _is_our_link(dest, src) or _same_file(dest, src):
-        kind = "symlink" if dest.is_symlink() else "copy"
-        model = _frontmatter_field(dest, "model")
-        extra = f" model={model}" if model else " 未绑模型（继承父会话）"
-        return f"grok-agent/{src.stem}: {kind} {dest}{extra}"
-    if dest.exists() or dest.is_symlink():
-        name = _frontmatter_field(dest, "name")
-        mode = _frontmatter_field(dest, "permission_mode")
-        model = _frontmatter_field(dest, "model")
-        if name == "reviewer" or mode == "plan":
-            extra = f" model={model}" if model else " 未绑模型"
-            return f"grok-agent/{src.stem}: 本机已有 {dest}{extra}"
-        return f"grok-agent/{src.stem}: ⚠ 占用且不是 keel {dest}"
-    return f"grok-agent/{src.stem}: 未安装 → keel install"
+def isLocalReviewerRole(dest: Path) -> bool:
+    return frontmatterField(dest, "name") == "reviewer" or frontmatterField(dest, "permission_mode") == "plan"
 
 
-def remove_mount(dest: Path, src: Path) -> str:
-    if not dest.exists() and not dest.is_symlink():
-        return "absent"
-    if _is_our_link(dest, src) or _same_skill(dest, src) or _same_file(dest, src):
-        if dest.is_symlink():
-            dest.unlink()
-        elif dest.is_dir():
-            shutil.rmtree(dest)
-        else:
-            dest.unlink()
-        return "removed"
-    return "skip-foreign"
+def runTool(exe: str, *args: str) -> tuple[int, str]:
+    result = subprocess.run([exe, *args], check=False, capture_output=True, text=True)
+    return result.returncode, (result.stdout or result.stderr or "").strip()
 
 
-def install_bin(script: Path, bin_dir: Path, *, copy: bool) -> str:
-    bin_dir.mkdir(parents=True, exist_ok=True)
-    dest = bin_dir / CLI_NAME
-    src = script.resolve()
-    if dest.is_symlink() or dest.exists():
-        if dest.is_symlink():
-            try:
-                if dest.resolve() == src:
-                    return "ok"
-            except OSError:
-                pass
-            dest.unlink()
-        elif dest.exists():
-            try:
-                if dest.read_bytes() == src.read_bytes():
-                    return "ok"
-            except OSError:
-                return "skip-exists"
-            return "skip-exists"
-    if copy:
-        shutil.copy2(src, dest)
-        dest.chmod(0o755)
-        return "copy"
-    try:
-        dest.symlink_to(src)
-        return "symlink"
-    except OSError:
-        shutil.copy2(src, dest)
-        dest.chmod(0o755)
-        return "copy"
-
-
-def remove_bin(script: Path, bin_dir: Path) -> str:
-    dest = bin_dir / CLI_NAME
-    if not dest.exists() and not dest.is_symlink():
-        return "absent"
-    src = script.resolve()
-    if dest.is_symlink():
-        try:
-            if dest.resolve() == src:
-                dest.unlink()
-                return "removed"
-        except OSError:
-            pass
-        return "skip-foreign"
-    try:
-        if dest.is_file() and dest.read_bytes() == src.read_bytes():
-            dest.unlink()
-            return "removed"
-    except OSError:
-        pass
-    return "skip-foreign"
-
-
-def refresh_local_skill() -> str | None:
+def refreshLocalSkill() -> tuple[bool, str | None]:
     exe = shutil.which("local-skill")
     if not exe:
-        return None
-    result = subprocess.run(
-        [exe, "refresh"],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    text = (result.stdout or result.stderr or "").strip()
-    if result.returncode != 0:
-        return f"local-skill refresh 失败: {text or result.returncode}"
-    return text or "local-skill refresh 完成"
+        return True, None
+    code, text = runTool(exe, "refresh")
+    if code != 0:
+        return False, f"local-skill refresh 失败: {text or code}"
+    return True, text or "local-skill refresh 完成"
 
 
-def install_plugin(root: Path) -> str:
+def installPlugin(root: Path) -> tuple[bool, str]:
     exe = shutil.which("grok")
     if not exe:
-        return "skip: 未找到 grok"
-    result = subprocess.run(
-        [exe, "plugin", "install", str(root), "--trust"],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    text = (result.stdout or result.stderr or "").strip()
-    if result.returncode != 0:
-        return f"失败: {text or result.returncode}"
-    return text or "ok"
+        return False, "失败: 未找到 grok"
+    code, text = runTool(exe, "plugin", "install", str(root), "--trust")
+    if code != 0:
+        return False, f"失败: {text or code}"
+    return True, text or "ok"
 
 
-def command_install(args: argparse.Namespace) -> int:
-    home = Path(args.home).resolve() if args.home else home_dir()
-    root = repo_root()
-    skills = list_skills(root)
+def reviewContractStatus() -> tuple[bool, str]:
+    exe = shutil.which("local-skill")
+    if not exe:
+        return False, f"local-skill: ⚠ 未在 PATH（keel-review 需要 `local-skill find {REVIEW_CONTRACT_SKILL}`）"
+    code, text = runTool(exe, "find", REVIEW_CONTRACT_SKILL)
+    if code != 0 or not text:
+        return False, f"{REVIEW_CONTRACT_SKILL}: ⚠ `local-skill find {REVIEW_CONTRACT_SKILL}` 未找到，keel-review 会 BLOCKED"
+    return True, f"{REVIEW_CONTRACT_SKILL}: ok ({exe})"
+
+
+def binDir(args: argparse.Namespace, home: Path) -> Path:
+    return Path(args.bin_dir).expanduser() if args.bin_dir else home / ".local" / "bin"
+
+
+def commandInstall(args: argparse.Namespace) -> int:
+    home = homeDir(args.home)
+    state = State.load(home)
+    root = repoRoot(state)
+    state.root = str(root)
+    skills = listSkills(root)
     lines = [f"source: {root / 'skills'} ({len(skills)})"]
+    problems = 0
     for skill in skills:
         for host in hosts(home):
             if not host.required and not host.detect.is_dir():
                 continue
             dest = host.parent / skill.name
-            how = link_or_copy(skill, dest, copy=args.copy)
+            how = mount(skill, dest, "skills", state, copy=args.copy)
             if how == "skip-exists":
+                problems += 1
                 lines.append(f"{host.name}/{skill.name}: skip {dest}（已存在且不是 keel）")
             else:
                 lines.append(f"{host.name}/{skill.name}: {how} → {dest}")
-    grok_home = home / ".grok"
-    if grok_home.is_dir():
-        for agent in list_agents(root):
-            dest = grok_agent_dest(home, agent)
-            how = link_or_copy_file(agent, dest, copy=args.copy)
-            if how == "skip-exists":
-                lines.append(f"grok-agent/{agent.stem}: skip {dest}（已存在且不是 keel）")
-            else:
+    if (home / ".grok").is_dir():
+        for agent in listAgents(root):
+            dest = grokAgentDest(home, agent)
+            how = mount(agent, dest, "agents", state, copy=args.copy)
+            if how != "skip-exists":
                 lines.append(f"grok-agent/{agent.stem}: {how} → {dest}")
-    bin_dir = Path(args.bin_dir).expanduser() if args.bin_dir else home / ".local" / "bin"
-    how = install_bin(Path(__file__), bin_dir, copy=args.copy)
+            elif isLocalReviewerRole(dest):
+                lines.append(f"grok-agent/{agent.stem}: skip {dest}（本机已有 reviewer 角色，保留）")
+            else:
+                problems += 1
+                lines.append(f"grok-agent/{agent.stem}: skip {dest}（已存在且不是 keel）")
+    binDest = binDir(args, home) / CLI_NAME
+    how = mount(root / "bin" / CLI_NAME, binDest, "bin", state, copy=args.copy)
     if how == "skip-exists":
-        lines.append(f"bin: skip {bin_dir / CLI_NAME}（已存在且不是本 CLI）")
+        problems += 1
+        lines.append(f"bin: skip {binDest}（已存在且不是本 CLI）")
     else:
-        lines.append(f"bin: {how} → {bin_dir / CLI_NAME}")
-    refreshed = refresh_local_skill()
+        lines.append(f"bin: {how} → {binDest}")
+    state.save()
+    ok, refreshed = refreshLocalSkill()
     if refreshed:
         lines.append(refreshed)
+    if not ok:
+        problems += 1
     if args.plugin:
-        lines.append(f"plugin: {install_plugin(root)}")
+        ok, text = installPlugin(root)
+        lines.append(f"plugin: {text}")
+        if not ok:
+            problems += 1
     for line in lines:
         print(line)
+    if problems:
+        print(f"install: {problems} 项未完成", file=sys.stderr)
+        return 1
     return 0
 
 
-def command_uninstall(args: argparse.Namespace) -> int:
-    home = Path(args.home).resolve() if args.home else home_dir()
-    skills = list_skills()
+def commandUninstall(args: argparse.Namespace) -> int:
+    home = homeDir(args.home)
+    state = State.load(home)
+    root = repoRoot(state)
     lines: list[str] = []
-    for skill in skills:
+    for skill in listSkills(root):
         for host in hosts(home):
             dest = host.parent / skill.name
-            how = remove_mount(dest, skill)
+            how = unmount(dest, skill, "skills", state)
             if how == "absent" and not host.required and not host.detect.is_dir():
                 continue
             lines.append(f"{host.name}/{skill.name}: {how} {dest}")
-    grok_home = home / ".grok"
-    for agent in list_agents():
-        dest = grok_agent_dest(home, agent)
-        how = remove_mount(dest, agent)
-        if how == "absent" and not grok_home.is_dir():
+    grokHome = home / ".grok"
+    for agent in listAgents(root):
+        dest = grokAgentDest(home, agent)
+        how = unmount(dest, agent, "agents", state)
+        if how == "absent" and not grokHome.is_dir():
             continue
         lines.append(f"grok-agent/{agent.stem}: {how} {dest}")
     if not args.keep_bin:
-        bin_dir = Path(args.bin_dir).expanduser() if args.bin_dir else home / ".local" / "bin"
-        lines.append(f"bin: {remove_bin(Path(__file__), bin_dir)} {bin_dir / CLI_NAME}")
-    refreshed = refresh_local_skill()
+        binDest = binDir(args, home) / CLI_NAME
+        lines.append(f"bin: {unmount(binDest, root / 'bin' / CLI_NAME, 'bin', state)} {binDest}")
+    if args.keep_bin:
+        state.save()
+    else:
+        state.delete()
+    _, refreshed = refreshLocalSkill()
     if refreshed:
         lines.append(refreshed)
     for line in lines:
@@ -387,64 +358,75 @@ def command_uninstall(args: argparse.Namespace) -> int:
     return 0
 
 
-def command_doctor(args: argparse.Namespace) -> int:
-    home = Path(args.home).resolve() if args.home else home_dir()
-    root = repo_root()
-    lines = [f"root: {root}"]
+def _mountStatus(dest: Path, src: Path, kind: str, state: State) -> tuple[str, bool]:
+    """Return (status text, isProblem) for one expected mount."""
+    own = ownership(dest, src, kind, state)
+    if own == OURS:
+        if dest.is_symlink() and not dest.exists():
+            return f"⚠ 悬空链接 {dest} → keel install", True
+        return f"{'symlink' if dest.is_symlink() else 'copy'} {dest}", False
+    if own == FOREIGN:
+        return f"⚠ 占用且不是 keel {dest}", True
+    return f"未安装 → keel install  ({dest})", True
+
+
+def commandDoctor(args: argparse.Namespace) -> int:
+    home = homeDir(args.home)
+    state = State.load(home)
+    lines: list[str] = []
+    problems = 0
     try:
-        skills = list_skills(root)
-        lines.append("skills: " + " ".join(path.name for path in skills))
+        root = repoRoot(state)
+        skills = listSkills(root)
     except FileNotFoundError as exc:
-        lines.append(f"source: ⚠ {exc}")
-        for line in lines:
-            print(line)
+        print(f"source: ⚠ {exc}")
         return 1
-    library_missing = True
+    lines.append(f"root: {root}")
+    lines.append("skills: " + " ".join(path.name for path in skills))
     for skill in skills:
         for host in hosts(home):
-            dest = host.parent / skill.name
-            if _is_our_link(dest, skill) or _same_skill(dest, skill):
-                kind = "symlink" if dest.is_symlink() else "copy"
-                lines.append(f"{host.name}/{skill.name}: {kind} {dest}")
-                if host.name == "library":
-                    library_missing = False
-            elif dest.exists() or dest.is_symlink():
-                lines.append(f"{host.name}/{skill.name}: ⚠ 占用且不是 keel {dest}")
-                if host.name == "library":
-                    library_missing = False
-            elif host.required:
-                lines.append(f"{host.name}/{skill.name}: 未安装 → keel install")
-            elif host.detect.is_dir():
-                lines.append(f"{host.name}/{skill.name}: 未安装 → keel install")
-    if library_missing:
-        lines.append("library: 未安装 → keel install")
-    grok_home = home / ".grok"
-    agents = list_agents(root)
-    if grok_home.is_dir():
+            if not host.required and not host.detect.is_dir():
+                continue
+            text, bad = _mountStatus(host.parent / skill.name, skill, "skills", state)
+            problems += bad
+            lines.append(f"{host.name}/{skill.name}: {text}")
+    agents = listAgents(root)
+    if (home / ".grok").is_dir():
         if not agents:
             lines.append("grok-agent: 仓库没有 agents/*.md")
         for agent in agents:
-            lines.append(_agent_status_line(grok_agent_dest(home, agent), agent))
+            dest = grokAgentDest(home, agent)
+            own = ownership(dest, agent, "agents", state)
+            model = frontmatterField(dest, "model")
+            if own == OURS and dest.exists():
+                kind = "symlink" if dest.is_symlink() else "copy"
+                extra = f" model={model}" if model else " 未绑模型（继承父会话）"
+                lines.append(f"grok-agent/{agent.stem}: {kind} {dest}{extra}")
+            elif own == FOREIGN and isLocalReviewerRole(dest):
+                extra = f" model={model}" if model else " 未绑模型"
+                lines.append(f"grok-agent/{agent.stem}: 本机已有 {dest}{extra}")
+            else:
+                text, _ = _mountStatus(dest, agent, "agents", state)
+                problems += 1
+                lines.append(f"grok-agent/{agent.stem}: {text}")
     elif agents:
         lines.append("grok-agent: 未探测到 ~/.grok")
-    bin_dir = Path(args.bin_dir).expanduser() if args.bin_dir else home / ".local" / "bin"
-    dest = bin_dir / CLI_NAME
-    if dest.is_symlink() or dest.exists():
-        try:
-            resolved = dest.resolve()
-        except OSError:
-            resolved = dest
-        lines.append(f"bin: {dest} → {resolved}")
-    else:
-        lines.append(f"bin: 未安装 → keel install  ({bin_dir / CLI_NAME})")
-    exe = shutil.which("local-skill")
-    lines.append("local-skill: " + (exe or "未在 PATH"))
+    binDest = binDir(args, home) / CLI_NAME
+    text, bad = _mountStatus(binDest, root / "bin" / CLI_NAME, "bin", state)
+    problems += bad
+    lines.append(f"bin: {text}")
+    ok, text = reviewContractStatus()
+    problems += not ok
+    lines.append(text)
     for line in lines:
         print(line)
+    if problems:
+        print(f"doctor: {problems} 项需要处理", file=sys.stderr)
+        return 1
     return 0
 
 
-def build_parser() -> argparse.ArgumentParser:
+def buildParser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="keel",
         description="把 keel 路由与环节 skill 安装到本机 coding agent 与 local-skill 库。",
@@ -453,26 +435,26 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--bin-dir", help="CLI 安装目录，默认 ~/.local/bin")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    install = sub.add_parser("install", help="挂载全部 skill 并安装 CLI")
+    install = sub.add_parser("install", help="挂载全部 skill 并安装 CLI；有任何跳过或失败则退出码 1")
     install.add_argument("--copy", action="store_true", help="复制文件，不建符号链接")
     install.add_argument("--plugin", action="store_true", help="同时 grok plugin install --trust")
-    install.set_defaults(handler=command_install)
+    install.set_defaults(handler=commandInstall)
 
     uninstall = sub.add_parser("uninstall", help="只移除 keel 自己挂上的链接或副本")
     uninstall.add_argument("--keep-bin", action="store_true", help="保留 ~/.local/bin/keel")
-    uninstall.set_defaults(handler=command_uninstall)
+    uninstall.set_defaults(handler=commandUninstall)
 
-    doctor = sub.add_parser("doctor", help="只读检查挂载状态")
-    doctor.set_defaults(handler=command_doctor)
+    doctor = sub.add_parser("doctor", help="只读检查挂载状态；有任何缺失或占用则退出码 1")
+    doctor.set_defaults(handler=commandDoctor)
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = build_parser()
+    parser = buildParser()
     args = parser.parse_args(argv)
     try:
         return int(args.handler(args))
-    except FileNotFoundError as exc:
+    except (FileNotFoundError, OSError, RuntimeError) as exc:
         print(str(exc), file=sys.stderr)
         return 1
 
