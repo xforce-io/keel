@@ -449,6 +449,7 @@ class KeelReflectContractTests(unittest.TestCase):
         self.assertIn("gh pr list --head", start)
         self.assertIn("commit-tree", start)
         self.assertIn("for-each-ref", start)
+        self.assertIn("state=merged", start)
         self.assertIn("工作区脏 → `BLOCKED`", start)
         self.assertIn("不回退 `gh`", start)
         self.assertIn("禁止 `checkout origin/", start)
