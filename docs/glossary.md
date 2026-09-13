@@ -12,6 +12,7 @@
 | reviewer | Grok 审查 agent 类型。由 `keel install` 挂到 `~/.grok/agents/reviewer.md`，`permission_mode: plan`；模型 slug 留在本机。 | setup-pstack 模型表、general-purpose 自审 |
 | keel-release | 环节 skill。CI、PR/MR、合入；有 runbook 则部署与核对。 | 本地跑起来、release.md |
 | keel-reflect | 任务后复盘 skill。三透镜后给出 Accepted / Rejected / Backlog，人批再改 skill、AGENTS 或建 Issue。不是交付环节。 | reflection 2、自学习、pstack reflect 自动 apply |
+| keel-ticket | 建票配套 skill。从对话创建 GitHub / GitLab Issue，并切到 `feat/{issue}-*` 或 `bugfix/{issue}-*`。不是交付环节。 | create-github-issue、create-gitlab-issue、intake、keel-issue |
 | route | keel 模式：查看当前状态并只推进一步合法阶段。 | 随便处理一下 |
 | design | keel 模式：`keel-how` 后执行到 `keel-design` 并停在人工批准。 | — |
 | dev | keel 模式：`keel-how` → `keel-dev` → `keel-verify` → `keel-review`，停在可发布、不合入。设计门禁触发且未批准时停在 `keel-design`，不绕过。 | — |

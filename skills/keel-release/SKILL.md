@@ -10,6 +10,8 @@ description: >
 
 只在审查 `PASS`、且验收表没有阻塞 `fail` 或缺失 `S*` 行之后继续。允许的 `skip` 留在 PR/MR 上可见，不变成 pass。
 
+当前分支必须是 `feat/{issue}-*` 或 `bugfix/{issue}-*`，且 `{issue}` 等于本 Issue 号。默认分支或其它前缀（`chore/*`、`cursor/*`、`fix/*`、号对不上）→ `BLOCKED`。不改名、不改道 `keel-ticket`、不合入。
+
 按有效仓库惯例创建或更新 PR/MR，等待必需 CI 与平台检查。检查失败或仍在进行时不合入。表写入 PR/MR 正文。
 
 合入 = 默认分支（或项目写明的集成分支）已包含该变更。本地重启、对未提交文件提供服务、脏树上测试通过，都不是合入。缺 Issue 号不是跳过 PR/MR 的理由。
