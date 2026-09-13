@@ -20,16 +20,15 @@ description: >
 ## 只读（必须先做完再问清不清）
 
 1. `git remote get-url origin`，口头确认平台（GitHub / GitLab）。无法判定 → `BLOCKED`，问一次。
-2. 默认分支：`git rev-parse --abbrev-ref origin/HEAD`（没有则 `main` / `master`）。
-3. 当前分支：`git branch --show-current`；相对默认分支：ahead/behind、是否脏。
+2. 默认分支短名：`git symbolic-ref --short refs/remotes/origin/HEAD` 去掉 `origin/`（没有则 `main` / `master`）。比较用 `origin/<短名>`；`git checkout` 只用本地短名，禁止 `checkout origin/<短名>`（会 detached HEAD）。
+3. 当前分支：`git branch --show-current`；相对 `origin/<短名>`：ahead/behind、是否脏。
 4. Open Issue / PR：
    - GitHub：`gh issue list --state open`、`gh pr list --state open`
    - GitLab：从 origin 解析 host 与 project path；`GET {host}/api/v4/projects/:id/issues?state=opened` 与 `…/merge_requests?state=opened`，`:id` 可用 URL-encoded path。仅 `$GITLAB_API_TOKEN`。未设置则 `BLOCKED`，不回退 `gh`
-5. 残留枝：本地 `git branch --format='%(refname:short)'` 与远程 `git branch -r`，对每一条（除默认分支）判定「已合入仍在」仅当下面**任一**成立：
-   - `git merge-base --is-ancestor <branch> <default>`
-   - GitHub：`gh pr list --head <branch> --state merged` 非空（squash 残留）
-   - GitLab：对应 project 的 merged MR，`source_branch` 等于该短名
-   当前分支若已合入，仍列入「残留」，清的时候先切默认分支再删，不要对着当前枝 `branch -d`。未合入的当前工作枝不列入残留。列出：已合入仍在、未合入、非法前缀（不是 `feat/*` / `bugfix/*` / 默认分支）。
+5. 残留枝：本地短名来自 `git branch --format='%(refname:short)'`。远程来自 `git branch -r`，去掉 `origin/` 前缀，**丢掉** `HEAD` / `origin/HEAD`。比较与删除一律用短名。对每一条（除默认短名）「已合入仍在」仅当下面**两条都成立**：
+   - 已合入信号：`git merge-base --is-ancestor <短名> origin/<默认短名>`，**或** GitHub `gh pr list --head <短名> --state merged` 非空，**或** GitLab merged MR 的 `source_branch` 等于该短名
+   - 无独有提交：`git log --oneline origin/<默认短名>..<短名>` 为空（本地不存在的远程短名用 `origin/<短名>` 做 log）
+   缺任一则算未合入，不准进残留表。当前分支若已合入仍列入残留；清时先 `git checkout <默认短名>` 再删，不要对着当前枝 `branch -d`。未合入的当前工作枝不列入残留。列出：已合入仍在、未合入、非法前缀（不是 `feat/*` / `bugfix/*` / 默认短名）。
 6. 输出一张表，然后停（除非本轮明确说清）：
 
 | 类 | 内容 |
@@ -45,13 +44,13 @@ description: >
 
 ## 清残留（仅当本轮明确说「清」）
 
-只删表里「已合入仍在」的枝：
+只删表里「已合入仍在」的枝（短名）：
 
-- 若其中含当前分支：先 `git checkout <default>`，再删
-- 本地：`merge-base --is-ancestor` 成立用 `git branch -d`；仅因 merged PR/MR 列入的 squash 残留用 `-D`
-- 远程：`git push origin --delete <name>`（仅上表已合入项）
+- 若其中含当前分支：先 `git checkout <默认短名>`，再删
+- 本地：祖先已在默认分支用 `git branch -d`；仅 squash 信号 + 无独有提交用 `-D`
+- 远程：`git push origin --delete <短名>`
 
-不删：当前未合入工作枝、默认分支、尚未合入的 `feat/*` / `bugfix/*`。不关票、不合 PR。删完再打一次只读表。
+不删：当前未合入工作枝、默认短名、`git log origin/<默认短名>..<短名>` 非空的枝。不关票、不合 PR。删完再打一次只读表。
 
 ## 完成
 
