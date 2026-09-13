@@ -2,13 +2,14 @@
 name: keel-release
 description: >
   Use when the user says keel-release or /keel-release, or when keel routes
-  to CI, PR/MR, merge, or deploy. Land only after independent review PASS.
+  to CI, PR/MR, merge, or deploy. Land only after independent review PASS
+  and human: optional.
   Do not invent deploy or rollback commands.
 ---
 
 # keel-release
 
-只在审查 `PASS`、且验收表没有阻塞 `fail` 或缺失 `S*` 行之后继续。允许的 `skip` 留在 PR/MR 上可见，不变成 pass。
+只在审查 `PASS`、且 `human: optional`、且验收表没有阻塞 `fail` 或缺失 `S*` 行之后继续。`human: required` 或缺 `human` 字段 → `BLOCKED`，不合入。允许的 `skip` 留在 PR/MR 上可见，不变成 pass。
 
 当前分支必须是 `feat/{issue}-*` 或 `bugfix/{issue}-*`，且 `{issue}` 等于本 Issue 号。默认分支或其它前缀（`chore/*`、`cursor/*`、`fix/*`、号对不上）→ `BLOCKED`。不改名、不改道 `keel-ticket`、不合入。
 
