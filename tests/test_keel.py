@@ -511,6 +511,23 @@ class KeelVerifyLookupTests(unittest.TestCase):
             self.assertIn("git mv", payload["hint"])
             self.assertNotIn("git rm", payload["hint"])
 
+    def test_found_with_mixed_duplicate_and_unmigrated_legacy_gets_move_hint(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            app = Path(raw)
+            self._write_handbook(app / ".agents" / "skills", "verify-notes")
+            self._write_handbook(app / ".agents" / "skills", "verify-web")
+            self._write_handbook(app / ".grok" / "skills", "verify-notes", feature="stale.md")
+            self._write_handbook(app / ".grok" / "skills", "verify-cli")
+            result = self._run_lookup(app)
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual([item["name"] for item in payload["handbooks"]], ["verify-notes", "verify-web"])
+            self.assertEqual(payload["legacy"], ["verify-cli", "verify-notes"])
+            self.assertIn("git mv", payload["hint"])
+            self.assertNotIn("git rm", payload["hint"])
+
     def test_legacy_dir_is_reported_even_when_empty_and_alongside_incomplete_agents_dir(self) -> None:
         import tempfile
 
@@ -605,6 +622,14 @@ class HandbookPathWordingTests(unittest.TestCase):
                     continue
                 negated = any(marker in line for marker in ("旧", "retired", "不认", "不是手册", "no longer"))
                 self.assertTrue(negated, f"{relative} still presents the legacy path as a handbook location: {line}")
+
+    def test_deleting_a_legacy_dir_is_never_unconditional_advice(self) -> None:
+        text = (ROOT / "skills" / "keel-verify" / "SKILL.md").read_text(encoding="utf-8")
+        # Per clause, not per line: the `found` branch must not offer `git rm` without the move case.
+        for clause in re.split(r"[；。\n]", text):
+            if "git rm" not in clause:
+                continue
+            self.assertIn("git mv", clause, f"keel-verify SKILL.md advises 'git rm' without the move case: {clause}")
 
 
 if __name__ == "__main__":
