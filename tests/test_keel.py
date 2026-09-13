@@ -475,8 +475,7 @@ class KeelVerifyLookupTests(unittest.TestCase):
             self.assertEqual(payload["status"], "missing")
             self.assertNotIn("handbooks", payload)
             self.assertEqual(payload["legacy"], ["verify-notes"])
-            self.assertIn(".agents/skills/", payload["hint"])
-            self.assertIn("git mv", payload["hint"])
+            self.assertIn("mkdir -p .agents/skills && git mv", payload["hint"])
 
     def test_s3_agents_and_legacy_side_by_side_reports_one_agents_handbook(self) -> None:
         import tempfile
@@ -494,7 +493,40 @@ class KeelVerifyLookupTests(unittest.TestCase):
             self.assertEqual(Path(handbook["skill_file"]).resolve(), (agents / "SKILL.md").resolve())
             self.assertEqual(handbook["feature_files"], ["create-note.md"])
             self.assertEqual(payload["legacy"], ["verify-notes"])
-            self.assertIn("hint", payload)
+            self.assertIn("git rm -r", payload["hint"])
+            self.assertNotIn("git mv", payload["hint"])
+
+    def test_legacy_dir_is_reported_even_when_empty_and_alongside_incomplete_agents_dir(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            app = Path(raw)
+            (app / ".grok" / "skills" / "verify-old").mkdir(parents=True)
+            agents = app / ".agents" / "skills" / "verify-notes"
+            agents.mkdir(parents=True)
+            (agents / "SKILL.md").write_text("# notes\n", encoding="utf-8")
+            (app / ".agents" / "skills" / "verify-not-a-dir").write_text("stray file\n", encoding="utf-8")
+            result = self._run_lookup(app)
+            self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["status"], "missing")
+            self.assertEqual(payload["legacy"], ["verify-old"])
+            self.assertEqual(payload["incomplete"], {"verify-notes": ["features", "features/README.md"]})
+
+    def test_agents_handbook_with_directory_named_skill_md_is_incomplete(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            app = Path(raw)
+            agents = app / ".agents" / "skills" / "verify-notes"
+            (agents / "SKILL.md").mkdir(parents=True)
+            (agents / "features").mkdir()
+            (agents / "features" / "README.md").write_text("# map\n", encoding="utf-8")
+            result = self._run_lookup(app)
+            self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["status"], "missing")
+            self.assertEqual(payload["incomplete"], {"verify-notes": ["SKILL.md"]})
 
     def test_s4_cursor_only_handbook_is_missing(self) -> None:
         import tempfile
@@ -556,7 +588,7 @@ class HandbookPathWordingTests(unittest.TestCase):
             for line in (ROOT / relative).read_text(encoding="utf-8").splitlines():
                 if ".grok/skills/verify-" not in line:
                     continue
-                negated = any(marker in line for marker in ("旧", "retired", "不", ".agents/skills/verify-"))
+                negated = any(marker in line for marker in ("旧", "retired", "不认", "不是手册", "no longer"))
                 self.assertTrue(negated, f"{relative} still presents the legacy path as a handbook location: {line}")
 
 

@@ -28,7 +28,7 @@ description: >
 - 找到一份：完整读取该 `SKILL.md`（Launch / Doctor / Drive / Evidence / Cleanup），再读 `features/README.md` 与本次要对的功能文件。
 - 找到多份：问哪一个 `verify-*`，不要猜。
 - 找不到：见下方缺手册。
-- 输出带 `legacy`：应用仓还留着 `.grok/skills/verify-*`。它不是手册。`missing` 时按缺手册处理并把 `hint` 原话告诉用户（一句 `git mv` 即可迁移），不要自己代读旧路径；`found` 时手册可用，同样把 `hint` 说一次，让人删旧目录。
+- 输出带 `legacy`：应用仓库还留着 `.grok/skills/verify-*`。它不是手册。`missing` 时按缺手册处理，把 `hint` 原话告诉用户（`mkdir -p` + `git mv` 迁移），不要自己代读旧路径；`found` 时手册可用，把 `hint` 原话说一次，让人 `git rm` 删旧目录。
 
 ## 缺手册
 
@@ -37,7 +37,7 @@ description: >
 | 用户能摸到的界面（Web / CLI / TUI / 桌面 / 主 API 路径） | `BLOCKED`。问一次：生成手册，或本 Issue 无界面可 skip。不要即兴点 UI，不要去 `.cursor` 找替身。 |
 | 明确无用户界面（纯库、内部重构），且 `S1` 已是可跑命令 | `skip`，表上写明「无用户路径」。 |
 
-禁止把「没有 `.cursor`」当成缺手册的理由；缺的是 `.agents/skills/verify-*`。只有旧 `.grok/skills/verify-*` 同样算缺手册，让人迁移，不要替它读。
+禁止把「没有 `.cursor`」当成缺手册的理由；缺的是 `.agents/skills/verify-*`。仓库里只有旧 `.grok/skills/verify-*` 时同样算缺手册，让人迁移，不要替它读。
 
 ## 把 S1 对到功能文件
 

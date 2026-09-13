@@ -22,9 +22,13 @@ FEATURES_README = "README.md"
 HANDBOOK_ROOT = (".agents", "skills")
 LEGACY_ROOT = (".grok", "skills")
 VERIFY_PREFIX = "verify-"
-LEGACY_HINT = (
-    "'.grok/skills/verify-*' is no longer a handbook location; "
-    "move each directory to '.agents/skills/' (e.g. git mv .grok/skills/verify-<app> .agents/skills/verify-<app>)."
+LEGACY_MOVE_HINT = (
+    "'.grok/skills/verify-*' is no longer a handbook location; move each directory to '.agents/skills/' "
+    "(e.g. mkdir -p .agents/skills && git mv .grok/skills/verify-<app> .agents/skills/verify-<app>)."
+)
+LEGACY_REMOVE_HINT = (
+    "'.grok/skills/verify-*' is retired and a '.agents/skills/' handbook already exists; "
+    "delete the old directory (e.g. git rm -r .grok/skills/verify-<app>)."
 )
 
 
@@ -58,8 +62,12 @@ def incompleteHandbooks(appRoot: Path) -> dict[str, list[str]]:
     for child in _verifyDirs(appRoot, HANDBOOK_ROOT):
         missing = [
             str(relative)
-            for relative in (Path(SKILL_MD), Path(FEATURES), Path(FEATURES) / FEATURES_README)
-            if not (child / relative).exists()
+            for relative, check in (
+                (Path(SKILL_MD), Path.is_file),
+                (Path(FEATURES), Path.is_dir),
+                (Path(FEATURES) / FEATURES_README, Path.is_file),
+            )
+            if not check(child / relative)
         ]
         if missing:
             problems[child.name] = missing
@@ -126,13 +134,13 @@ def main(argv: list[str] | None = None) -> int:
             payload["incomplete"] = incomplete
         if legacy:
             payload["legacy"] = legacy
-            payload["hint"] = LEGACY_HINT
+            payload["hint"] = LEGACY_MOVE_HINT
         print(json.dumps(payload, ensure_ascii=False))
         return 1
     result: dict[str, object] = {"status": "found", "handbooks": [_handbookJson(item) for item in found]}
     if legacy:
         result["legacy"] = legacy
-        result["hint"] = LEGACY_HINT
+        result["hint"] = LEGACY_REMOVE_HINT
     print(json.dumps(result, ensure_ascii=False))
     return 0
 
