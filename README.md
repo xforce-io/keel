@@ -20,7 +20,12 @@
 
 ## 安装
 
-需要 Python ≥ 3.11。克隆后把全部 skill 挂到本机：
+前置条件：
+
+- Python ≥ 3.11。
+- `local-skill` 在 PATH，且 `local-skill find code-review` 能找到审查合同 skill。`keel-review` 靠它把 `code-review` 交给 Reviewer；找不到该环节直接 `BLOCKED`。`code-review` 不随 keel 分发。`keel doctor` 会检查这两项。
+
+克隆后把全部 skill 挂到本机：
 
 ```bash
 git clone https://github.com/xforce-io/keel.git
@@ -35,19 +40,20 @@ cd keel
 3. 若存在 `~/.grok`，把 `agents/reviewer.md` 挂到 `~/.grok/agents/reviewer.md`（plan 权限；不覆盖已有本机角色，不写死模型 slug）
 4. 把 CLI 链到 `~/.local/bin/keel`
 5. 若 PATH 里有 `local-skill`，执行 `refresh`
+6. 在 `~/.config/keel/state.json` 记下仓库路径和 keel 自己复制出去的文件
 
-不写入 `~/.agents/skills/`。
+不写入 `~/.agents/skills/`。只跳过、只移除非 keel 的东西：指向任意 keel checkout 的符号链接、悬空链接、以及 `state.json` 里记录的副本才算 keel 的。任一项被跳过或失败，`install` 退出码为 1。
 
 可选：
 
 ```bash
-./bin/keel install --copy      # 不能建符号链接时复制
+./bin/keel install --copy      # 不能建符号链接时复制；再次 install --copy 会整体刷新副本
 ./bin/keel install --plugin    # 再执行 grok plugin install . --trust
-./bin/keel doctor              # 只读检查
+./bin/keel doctor              # 只读检查；有缺失、占用或找不到 code-review 则退出码 1
 ./bin/keel uninstall           # 只拆 keel 自己挂上的链接或副本
 ```
 
-已 clone、且 `~/.local/bin` 在 PATH 时，之后用 `keel install` / `keel doctor` 即可。
+已 clone、且 `~/.local/bin` 在 PATH 时，之后用 `keel install` / `keel doctor` 即可；`--copy` 装出的 CLI 通过 `state.json` 找回仓库，仓库搬走后会直接报错，重新在新位置跑 `./bin/keel install` 或设 `KEEL_ROOT`。
 
 ## 用法
 
