@@ -37,7 +37,7 @@ description: >
 
 - **route** — 「处理 Issue N」：只执行下一合法环节一份，然后停。下一刀是设计或实现、且还没有对将改子系统的机制说明时，下一合法环节是 `keel-how`。实现已做、尚未按手册在真路径上证明时，下一合法环节是 `keel-verify`。
 - **design** — 「设计 Issue N」：`keel-how`（可按该环节 skip）→ `keel-design`，停在人工批准。
-- **dev** — 「开发 Issue N」：`keel-how`（可按该环节 skip）→ `keel-dev` → `keel-verify` → `keel-review`，停在可发布，不合入。
+- **dev** — 「开发 Issue N」：`keel-how`（可按该环节 skip）→ `keel-dev` → `keel-verify` → `keel-review`，停在可发布，不合入。设计门禁触发而没有人工批准证据时，`dev` 不是绕过 `keel-design` 的许可：停在 `keel-design` 等批准，或 `BLOCKED`。
 - **end-to-end** — 「端到端完成」/「端到端改」：从下一合法环节执行到 `keel-release`；`keel-how` 在设计/实现前，`keel-verify` 在 `keel-review` 之前。用户要端到端但计划漏了 how/验证/审查/CI/合入时，计划不完整：补上或 `BLOCKED`。禁止默默丢掉。
 
 「端到端完成」授权的是这条有范围的生命周期，不是绕过仓库策略、保护分支、人工批准或缺失的部署事实。
