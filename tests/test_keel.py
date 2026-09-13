@@ -430,24 +430,27 @@ class KeelVerifyLookupTests(unittest.TestCase):
             text=True,
         )
 
-    def test_finds_grok_handbook_and_ignores_cursor(self) -> None:
-        import json
+    @staticmethod
+    def _write_handbook(root: Path, name: str, feature: str = "create-note.md") -> Path:
+        handbook = root / name
+        features = handbook / "features"
+        features.mkdir(parents=True)
+        (handbook / "SKILL.md").write_text(f"# {name}\n", encoding="utf-8")
+        (features / "README.md").write_text("# map\n", encoding="utf-8")
+        (features / feature).write_text("# feature\n", encoding="utf-8")
+        return handbook
+
+    def test_s1_finds_agents_handbook_and_ignores_cursor(self) -> None:
         import tempfile
 
         with tempfile.TemporaryDirectory() as raw:
             app = Path(raw)
-            grok = app / ".grok" / "skills" / "verify-notes"
-            grok.mkdir(parents=True)
-            (grok / "SKILL.md").write_text("# notes\n", encoding="utf-8")
-            features = grok / "features"
-            features.mkdir()
-            (features / "README.md").write_text("# map\n", encoding="utf-8")
-            (features / "create-note.md").write_text("# create\n", encoding="utf-8")
+            agents = self._write_handbook(app / ".agents" / "skills", "verify-notes")
             cursor = app / ".cursor" / "skills" / "verify-notes"
             cursor.mkdir(parents=True)
             (cursor / "SKILL.md").write_text("# cursor-only\n", encoding="utf-8")
             (cursor / "features").mkdir()
-            (cursor / "features" / "other.md").write_text("# other\n", encoding="utf-8")
+            (cursor / "features" / "README.md").write_text("# other\n", encoding="utf-8")
             result = self._run_lookup(app)
             self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
             payload = json.loads(result.stdout)
@@ -455,54 +458,106 @@ class KeelVerifyLookupTests(unittest.TestCase):
             self.assertEqual(len(payload["handbooks"]), 1)
             handbook = payload["handbooks"][0]
             self.assertEqual(handbook["name"], "verify-notes")
-            self.assertEqual(Path(handbook["skill_file"]).resolve(), (grok / "SKILL.md").resolve())
+            self.assertEqual(Path(handbook["skill_file"]).resolve(), (agents / "SKILL.md").resolve())
             self.assertEqual(handbook["feature_files"], ["create-note.md"])
             self.assertNotIn(".cursor", handbook["skill_file"])
+            self.assertNotIn("legacy", payload)
 
-    def test_cursor_only_handbook_is_missing(self) -> None:
-        import json
+    def test_s2_legacy_grok_only_is_missing_with_migration_hint(self) -> None:
         import tempfile
 
         with tempfile.TemporaryDirectory() as raw:
             app = Path(raw)
-            cursor = app / ".cursor" / "skills" / "verify-notes"
-            cursor.mkdir(parents=True)
-            (cursor / "SKILL.md").write_text("# cursor\n", encoding="utf-8")
-            (cursor / "features").mkdir()
-            (cursor / "features" / "create-note.md").write_text("# create\n", encoding="utf-8")
+            self._write_handbook(app / ".grok" / "skills", "verify-notes")
             result = self._run_lookup(app)
             self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
             payload = json.loads(result.stdout)
             self.assertEqual(payload["status"], "missing")
+            self.assertNotIn("handbooks", payload)
+            self.assertEqual(payload["legacy"], ["verify-notes"])
+            self.assertIn(".agents/skills/", payload["hint"])
+            self.assertIn("git mv", payload["hint"])
 
-    def test_grok_handbook_without_features_readme_is_incomplete(self) -> None:
-        import json
+    def test_s3_agents_and_legacy_side_by_side_reports_one_agents_handbook(self) -> None:
         import tempfile
 
         with tempfile.TemporaryDirectory() as raw:
             app = Path(raw)
-            grok = app / ".grok" / "skills" / "verify-notes"
-            (grok / "features").mkdir(parents=True)
-            (grok / "SKILL.md").write_text("# notes\n", encoding="utf-8")
-            (grok / "features" / "create-note.md").write_text("# create\n", encoding="utf-8")
+            agents = self._write_handbook(app / ".agents" / "skills", "verify-notes")
+            self._write_handbook(app / ".grok" / "skills", "verify-notes", feature="stale.md")
+            result = self._run_lookup(app)
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["status"], "found")
+            self.assertEqual(len(payload["handbooks"]), 1)
+            handbook = payload["handbooks"][0]
+            self.assertEqual(Path(handbook["skill_file"]).resolve(), (agents / "SKILL.md").resolve())
+            self.assertEqual(handbook["feature_files"], ["create-note.md"])
+            self.assertEqual(payload["legacy"], ["verify-notes"])
+            self.assertIn("hint", payload)
+
+    def test_s4_cursor_only_handbook_is_missing(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            app = Path(raw)
+            self._write_handbook(app / ".cursor" / "skills", "verify-notes")
+            result = self._run_lookup(app)
+            self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["status"], "missing")
+            self.assertNotIn("handbooks", payload)
+            self.assertNotIn("legacy", payload)
+
+    def test_agents_handbook_without_features_readme_is_incomplete(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            app = Path(raw)
+            agents = app / ".agents" / "skills" / "verify-notes"
+            (agents / "features").mkdir(parents=True)
+            (agents / "SKILL.md").write_text("# notes\n", encoding="utf-8")
+            (agents / "features" / "create-note.md").write_text("# create\n", encoding="utf-8")
             result = self._run_lookup(app)
             self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
             payload = json.loads(result.stdout)
             self.assertEqual(payload["status"], "missing")
             self.assertEqual(payload["incomplete"], {"verify-notes": ["features/README.md"]})
 
-    def test_grok_skill_without_features_is_missing(self) -> None:
-        import json
+    def test_agents_skill_without_features_is_missing(self) -> None:
         import tempfile
 
         with tempfile.TemporaryDirectory() as raw:
             app = Path(raw)
-            grok = app / ".grok" / "skills" / "verify-notes"
-            grok.mkdir(parents=True)
-            (grok / "SKILL.md").write_text("# notes\n", encoding="utf-8")
+            agents = app / ".agents" / "skills" / "verify-notes"
+            agents.mkdir(parents=True)
+            (agents / "SKILL.md").write_text("# notes\n", encoding="utf-8")
             result = self._run_lookup(app)
             self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
             self.assertEqual(json.loads(result.stdout)["status"], "missing")
+
+
+class HandbookPathWordingTests(unittest.TestCase):
+    DOCS = (
+        "README.md",
+        "docs/glossary.md",
+        "skills/keel/SKILL.md",
+        "skills/keel-dev/SKILL.md",
+        "skills/keel-verify/SKILL.md",
+    )
+
+    def test_s5_docs_name_the_neutral_handbook_path(self) -> None:
+        for relative in self.DOCS:
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            self.assertIn(".agents/skills/verify-", text, relative)
+
+    def test_s5_legacy_path_is_never_the_handbook_location(self) -> None:
+        for relative in self.DOCS:
+            for line in (ROOT / relative).read_text(encoding="utf-8").splitlines():
+                if ".grok/skills/verify-" not in line:
+                    continue
+                negated = any(marker in line for marker in ("旧", "retired", "不", ".agents/skills/verify-"))
+                self.assertTrue(negated, f"{relative} still presents the legacy path as a handbook location: {line}")
 
 
 if __name__ == "__main__":
