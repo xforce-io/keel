@@ -16,6 +16,7 @@
 | `keel-release` | CI、PR/MR、合入；有 runbook 则部署 |
 | `keel-reflect` | 任务后复盘（不在交付链上；你说了才跑） |
 | `keel-ticket` | 建 Issue 并切到 `feat/*` 或 `bugfix/*`（不在交付链上；你说了才跑） |
+| `keel-start` | 进仓看待办与残留分支（不在交付链上；你说了才跑） |
 
 也可单独调用 `/keel-design` 等。项目 `AGENTS.md` 仍是宪法。
 
