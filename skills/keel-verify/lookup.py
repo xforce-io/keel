@@ -140,7 +140,10 @@ def main(argv: list[str] | None = None) -> int:
     result: dict[str, object] = {"status": "found", "handbooks": [_handbookJson(item) for item in found]}
     if legacy:
         result["legacy"] = legacy
-        result["hint"] = LEGACY_REMOVE_HINT
+        # Only a legacy dir that duplicates a found .agents handbook is safe to delete;
+        # anything else still holds un-migrated content and must be moved.
+        foundNames = {item.name for item in found}
+        result["hint"] = LEGACY_REMOVE_HINT if all(name in foundNames for name in legacy) else LEGACY_MOVE_HINT
     print(json.dumps(result, ensure_ascii=False))
     return 0
 

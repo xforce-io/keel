@@ -496,6 +496,21 @@ class KeelVerifyLookupTests(unittest.TestCase):
             self.assertIn("git rm -r", payload["hint"])
             self.assertNotIn("git mv", payload["hint"])
 
+    def test_found_with_unmigrated_legacy_of_other_name_gets_move_hint(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            app = Path(raw)
+            self._write_handbook(app / ".agents" / "skills", "verify-web")
+            self._write_handbook(app / ".grok" / "skills", "verify-cli")
+            result = self._run_lookup(app)
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+            payload = json.loads(result.stdout)
+            self.assertEqual([item["name"] for item in payload["handbooks"]], ["verify-web"])
+            self.assertEqual(payload["legacy"], ["verify-cli"])
+            self.assertIn("git mv", payload["hint"])
+            self.assertNotIn("git rm", payload["hint"])
+
     def test_legacy_dir_is_reported_even_when_empty_and_alongside_incomplete_agents_dir(self) -> None:
         import tempfile
 
