@@ -360,7 +360,8 @@ class KeelHowContractTests(unittest.TestCase):
         self.assertNotIn("keel-start", order)
         router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("`keel-how`（可按该环节 skip）→ `keel-design`", router)
-        self.assertIn("`keel-how`（可按该环节 skip）→ `keel-dev`", router)
+        self.assertIn("`keel-how`（可按该环节 skip）", router)
+        self.assertIn("`keel-dev`", router)
         self.assertIn("下一合法环节是 `keel-how`", router)
         self.assertNotIn("explorer-prompt", router)
         self.assertNotIn("grok-4.6-fast-xhigh", router)
@@ -379,19 +380,133 @@ class KeelHowContractTests(unittest.TestCase):
         self.assertIn("不是 `keel-verify`", how)
 
 
-class KeelDesignGateContractTests(unittest.TestCase):
-    def test_dev_mode_cannot_bypass_design_approval(self) -> None:
+class WhenToAskContractTests(unittest.TestCase):
+    MUST_ASK = (
+        "force-push 到共享分支",
+        "合入默认分支",
+        "部署",
+        "删生产数据",
+        "对客消息",
+    )
+
+    def test_when_to_ask_file_is_the_only_table(self) -> None:
+        path = ROOT / "skills" / "keel" / "references" / "when-to-ask.md"
+        text = path.read_text(encoding="utf-8")
+        self.assertTrue(text.startswith("# 何时问人\n"))
+        self.assertIn("必须问", text)
+        self.assertIn("默认不问", text)
+        self.assertIn("测试-only", text)
+        self.assertIn("不以 AGENTS.md", text)
+        self.assertIn("写不写 ≠ 问不问", text)
+        self.assertIn("when-to-write.md", text)
+        self.assertIn("`human: optional`", text)
+        self.assertIn("不另给 `human:`", text)
+        self.assertNotIn("never-block", text)
+        self.assertNotIn("pause", text)
+        for item in self.MUST_ASK:
+            self.assertIn(item, text)
+
+    def test_router_reads_when_to_ask_and_does_not_copy_the_table(self) -> None:
+        router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("references/when-to-ask.md", router)
+        self.assertIn("references/when-to-write.md", router)
+        self.assertNotIn("必须问", router)
+        self.assertNotIn("默认不问", router)
+        self.assertNotIn("force-push 到共享分支", router)
+        self.assertNotIn("删生产数据", router)
+        self.assertNotIn("对客消息", router)
+        self.assertNotIn("必须写 L1", router)
+
+    def test_when_to_write_file_controls_l1_not_agents_triggers(self) -> None:
+        path = ROOT / "skills" / "keel" / "references" / "when-to-write.md"
+        text = path.read_text(encoding="utf-8")
+        self.assertTrue(text.startswith("# 何时写设计\n"))
+        self.assertIn("必须写 L1", text)
+        self.assertIn("跳过写 L1", text)
+        self.assertIn("测试-only", text)
+        self.assertIn("不以 AGENTS.md 的「L1 触发」", text)
+        self.assertIn("章节结构", text)
+        design = (ROOT / "skills" / "keel-design" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("../keel/references/when-to-write.md", design)
+        self.assertIn("先完整读取", design)
+        self.assertIn("不以 AGENTS.md 的触发列表为准", design)
+        self.assertIn("章节结构、事实源、批准用语仍套用有效 `AGENTS.md`", design)
+        self.assertNotIn("必须写 L1", design)
+        self.assertNotIn("套用有效 `AGENTS.md` 的 L1/L2 触发", design)
+
+    def test_dev_and_end_to_end_continue_after_writing_l1(self) -> None:
         router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
         start = router.index("- **dev**")
         chunk = router[start : router.index("\n", start)]
         self.assertIn("keel-design", chunk)
-        self.assertIn("BLOCKED", chunk)
+        self.assertNotIn("BLOCKED", chunk)
+        self.assertNotIn("停在 `keel-design`", chunk)
+        self.assertIn("design-write-if-triggered", router)
+        self.assertNotIn("human-approved", router)
+        e2e_start = router.index("- **end-to-end**")
+        e2e = router[e2e_start : router.index("\n", e2e_start)]
+        self.assertNotIn("人工批准", e2e)
+        self.assertIn("审查硬条件", router[e2e_start : e2e_start + 400])
         dev = (ROOT / "skills" / "keel-dev" / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("设计门禁", dev)
-        self.assertIn("BLOCKED", dev)
-        self.assertIn("keel-design", dev)
+        self.assertNotIn("没有人工批准", dev)
+        self.assertNotIn("设计门禁", dev)
         glossary = (ROOT / "docs" / "glossary.md").read_text(encoding="utf-8")
-        self.assertRegex(glossary, re.compile(r"^\| dev \|.*keel-design.*不绕过", re.M))
+        self.assertRegex(
+            glossary,
+            re.compile(r"^\| keel-design \|.*交回路由", re.M),
+        )
+        self.assertNotRegex(
+            glossary,
+            re.compile(r"^\| keel-design \|.*停在人工批准", re.M),
+        )
+        self.assertNotRegex(
+            glossary,
+            re.compile(r"^\| dev \|.*不绕过", re.M),
+        )
+
+    def test_design_flow_still_stops(self) -> None:
+        router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
+        start = router.index("- **design**")
+        chunk = router[start : router.index("\n", start)]
+        self.assertIn("停在人工批准", chunk)
+        glossary = (ROOT / "docs" / "glossary.md").read_text(encoding="utf-8")
+        self.assertRegex(
+            glossary,
+            re.compile(r"^\| design \|.*停在人工批准", re.M),
+        )
+        design = (ROOT / "skills" / "keel-design" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn("停在人工批准", design)
+        self.assertNotIn("端到端做完", design)
+        self.assertIn("交回路由", design)
+        self.assertIn("不判断要不要人", design)
+        self.assertIn("不给出 `human: required`", design)
+
+    def test_stage_skills_do_not_copy_when_to_ask_table(self) -> None:
+        for name in ("keel-design", "keel-dev", "keel-release"):
+            text = (ROOT / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
+            self.assertNotIn("必须问", text, name)
+            self.assertNotIn("默认不问", text, name)
+            self.assertNotIn("force-push 到共享分支", text, name)
+            self.assertNotIn("删生产数据", text, name)
+            self.assertNotIn("对客消息", text, name)
+
+    def test_no_second_delivery_entry(self) -> None:
+        skills = ROOT / "skills"
+        self.assertFalse((skills / "cat-mode").exists())
+        self.assertFalse((skills / "keel" / "references" / "pause.md").exists())
+        self.assertFalse(
+            (skills / "keel" / "references" / "reversible-vs-irreversible.md").exists()
+        )
+        self.assertFalse((skills / "keel" / "references" / "style.md").exists())
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("when-to-ask.md", readme)
+        self.assertIn("when-to-write.md", readme)
+        self.assertIn("写设计", readme)
+        self.assertNotIn("设计并停在人工批准", readme)
 
 
 class KeelReflectContractTests(unittest.TestCase):

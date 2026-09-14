@@ -2,18 +2,14 @@
 name: keel-design
 description: >
   Use when the user says keel-design or /keel-design, or when keel routes to
-  the design stage. Write the required design and stop for human approval.
-  Do not self-approve, implement, or merge.
+  the design stage. Write the required design and return control. Do not
+  self-approve, implement, or merge.
 ---
 
 # keel-design
 
-只做设计，停在人工批准。不代替 `keel-how`：现有子系统怎么工作由 how 带出处说明，本环节写该做成什么样。
+只写所需设计，交回路由。不决定停不停，不判断要不要人，不给出 `human: required` 或 `human: optional`。停不停由流程和 `../keel/references/when-to-ask.md`。不代替 `keel-how`：现有子系统怎么工作由 how 带出处说明，本环节写该做成什么样。
 
-套用有效 `AGENTS.md` 的 L1/L2 触发、结构、事实源和批准用语。设计停在可评审契约边界，不写实现 TODO 或代码说明书。
+写不写 L1 / L2 以 `../keel/references/when-to-write.md` 为准（先完整读取），不以 AGENTS.md 的触发列表为准。章节结构、事实源、批准用语仍套用有效 `AGENTS.md`。设计停在可评审契约边界，不写实现 TODO 或代码说明书。
 
-设计门禁触发时：发表或呈交相应提案，然后停，直到人给出所需批准。不得从沉默、从 agent 审查、或从「端到端做完」推断批准。
-
-批准之后，按项目规则 promote 或链接设计，再把控制权交回调用方（通常是 `keel`）。
-
-无人回复则问用户。禁止自批后大改。
+按 `../keel/references/when-to-write.md` 须写 L1 则发表或呈交提案，然后交回路由。禁止自批后把 Draft promote 成 Approved。
