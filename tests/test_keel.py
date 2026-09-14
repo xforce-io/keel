@@ -429,7 +429,8 @@ class WhenToAskContractTests(unittest.TestCase):
         design = (ROOT / "skills" / "keel-design" / "SKILL.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("when-to-write.md", design)
+        self.assertIn("../keel/references/when-to-write.md", design)
+        self.assertIn("先完整读取", design)
         self.assertIn("不以 AGENTS.md 的触发列表为准", design)
         self.assertIn("章节结构、事实源、批准用语仍套用有效 `AGENTS.md`", design)
         self.assertNotIn("必须写 L1", design)
