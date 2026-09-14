@@ -8,9 +8,7 @@ description: >
 
 # keel-dev
 
-只实现已批准范围，用项目已有手段证明，停在可送审。
-
-进入前先核对设计门禁：按有效 `AGENTS.md` 的 L1/L2 触发判断本 Issue 是否需要设计。需要而 Issue / PR·MR 上没有人工批准的设计，→ `BLOCKED`，交回 `keel-design`。「开发 Issue N」这句话不是批准，`keel-how` 的产出也不是批准。
+只实现已定位范围，用项目已有手段证明，停在可送审。不检查人工批准，不等人。缺 L1 提案时由调用方（通常是 `keel`）先跑 `keel-design`。
 
 不得在默认分支上实现本 Issue。工作分支必须是 `feat/{issue}-*` 或 `bugfix/{issue}-*`，且 `{issue}` 等于本 Issue 号，否则 `BLOCKED`。
 
