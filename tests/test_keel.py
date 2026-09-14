@@ -12,6 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CLI = ROOT / "bin" / "keel"
 STAGE_SKILLS = (
+    "cat-mode",
     "keel",
     "keel-issue",
     "keel-how",
@@ -496,7 +497,6 @@ class WhenToAskContractTests(unittest.TestCase):
 
     def test_no_second_delivery_entry(self) -> None:
         skills = ROOT / "skills"
-        self.assertFalse((skills / "cat-mode").exists())
         self.assertFalse((skills / "keel" / "references" / "pause.md").exists())
         self.assertFalse(
             (skills / "keel" / "references" / "reversible-vs-irreversible.md").exists()
@@ -507,6 +507,38 @@ class WhenToAskContractTests(unittest.TestCase):
         self.assertIn("when-to-write.md", readme)
         self.assertIn("写设计", readme)
         self.assertNotIn("设计并停在人工批准", readme)
+        router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("`cat-mode` 不启动 route", router)
+
+
+class CatModeContractTests(unittest.TestCase):
+    def test_cat_mode_cites_shared_contracts_without_copying_tables(self) -> None:
+        text = (ROOT / "skills" / "cat-mode" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("../keel/references/when-to-ask.md", text)
+        self.assertIn("../keel/references/when-to-write.md", text)
+        self.assertIn("先完整读取", text)
+        self.assertIn("不是交付环节", text)
+        self.assertIn("不启动 route / design / dev / end-to-end", text)
+        self.assertNotIn("必须问", text)
+        self.assertNotIn("默认不问", text)
+        self.assertNotIn("force-push 到共享分支", text)
+        self.assertNotIn("删生产数据", text)
+        self.assertNotIn("对客消息", text)
+        self.assertNotIn("必须写 L1", text)
+        self.assertIn("disable-model-invocation: true", text)
+        desc = text.split("---", 2)[1]
+        self.assertNotIn("处理 Issue", desc)
+        self.assertNotIn("端到端完成", desc)
+
+    def test_glossary_lists_cat_mode_as_style_not_delivery(self) -> None:
+        glossary = (ROOT / "docs" / "glossary.md").read_text(encoding="utf-8")
+        self.assertRegex(
+            glossary,
+            re.compile(r"^\| cat-mode \|.*不是交付环节.*不是流程", re.M),
+        )
+        router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertNotIn("cat-mode", _router_stage_order())
+        self.assertIn("风格不在本状态机内", router)
 
 
 class KeelReflectContractTests(unittest.TestCase):
