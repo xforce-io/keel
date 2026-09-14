@@ -17,6 +17,7 @@
 | `keel-reflect` | 任务后复盘（不在交付链上；你说了才跑） |
 | `keel-ticket` | 建 Issue 并切到 `feat/*` 或 `bugfix/*`（不在交付链上；你说了才跑） |
 | `keel-start` | 进仓看待办与残留分支（不在交付链上；你说了才跑） |
+| `cat-mode` | 风格（不在交付链上；你说了才跑；不启动 `/keel` 状态机） |
 
 也可单独调用 `/keel-design` 等。问不问、写不写由 keel 的两份合同控制；`AGENTS.md` 管章节结构、Issue 骨架、分支与托管平台。
 

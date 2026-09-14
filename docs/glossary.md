@@ -14,6 +14,7 @@
 | keel-reflect | 任务后复盘 skill。三透镜后给出 Accepted / Rejected / Backlog，人批再改 skill、AGENTS 或建 Issue。不是交付环节。 | reflection 2、自学习、pstack reflect 自动 apply |
 | keel-ticket | 建票配套 skill。从对话创建 GitHub / GitLab Issue，并切到 `feat/{issue}-*` 或 `bugfix/{issue}-*`。不是交付环节。 | create-github-issue、create-gitlab-issue、intake、keel-issue |
 | keel-start | 进仓配套 skill。只读待办、分支与已合入残留枝；人点头后才清残留。不是交付环节。 | monastery、巡检、治理、keel-issue |
+| cat-mode | 风格 skill。引用共用何时问人、何时写设计合同与会话覆盖。不是交付环节，不是流程。 | poteto-mode、style.md |
 | route | keel 流程：查看当前状态并只推进一步合法阶段。 | 随便处理一下 |
 | design | keel 流程：`keel-how` 后写设计并停在人工批准。 | — |
 | dev | keel 流程：写设计（若需）后实现到 review，停在可发布、不合入。 | — |
