@@ -13,7 +13,7 @@
 
 | # | 路径 | 可判定结果 |
 |---|---|---|
-| A | 入口 1，scratch home 只有默认探测面 | 退出码 `0`；`$HOME/.local/share/agent-skills/library/{keel,keel-design,keel-dev,keel-how,keel-issue,keel-reflect,keel-release,keel-review,keel-start,keel-ticket,keel-verify}` 均为指向本仓库 `skills/<name>` 的 symlink；`$BIN/keel` 指向本仓库 `bin/keel`；`$HOME/.agents/skills/` 不出现任何 `keel*` |
+| A | 入口 1，scratch home 只有默认探测面 | 退出码 `0`；`$HOME/.local/share/agent-skills/library/{keel,keel-design,keel-dev,keel-how,keel-issue,keel-reflect,keel-release,keel-review,keel-start,keel-sync,keel-ticket,keel-verify}` 均为指向本仓库 `skills/<name>` 的 symlink；`$BIN/keel` 指向本仓库 `bin/keel`；`$HOME/.agents/skills/` 不出现任何 `keel*` |
 | B | scratch home 先 `mkdir "$HOME/.cursor"` 再入口 1 | `cursor/keel` 也是 symlink；其它未探测宿主（无目录）不出现在输出里 |
 | C | 入口 2 | 退出码 `0`；library 与 bin 是 copy 不是 symlink；再次 `install --copy` 仍退出码 `0` 且内容刷新 |
 

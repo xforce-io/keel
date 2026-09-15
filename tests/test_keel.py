@@ -24,6 +24,7 @@ STAGE_SKILLS = (
     "keel-reflect",
     "keel-ticket",
     "keel-start",
+    "keel-sync",
 )
 LOOKUP = ROOT / "skills" / "keel-verify" / "lookup.py"
 
@@ -277,6 +278,7 @@ class KeelCopyModeTests(unittest.TestCase):
             self.assertEqual(ok.returncode, 0, ok.stderr + ok.stdout)
             self.assertIn("library/keel: symlink", ok.stdout)
             self.assertIn("library/keel-design:", ok.stdout)
+            self.assertRegex(ok.stdout, r"(?m)^skills:.*\bkeel-sync\b")
             self.assertIn("library/keel-verify:", ok.stdout)
             self.assertIn("library/keel-how:", ok.stdout)
             self.assertIn("library/keel-reflect:", ok.stdout)

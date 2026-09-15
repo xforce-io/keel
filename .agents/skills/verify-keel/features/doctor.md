@@ -12,7 +12,7 @@
 
 | # | 路径 | 可判定结果 |
 |---|---|---|
-| A | 入口 1 | 退出码 `0`；含 `root:` 本仓库、九个 skill 名、`library/keel:` 为 symlink 或 copy、`bin:` 已挂、`code-review: ok` |
+| A | 入口 1 | 退出码 `0`；含 `root:` 本仓库、`skills:` 含 `keel` 与 `keel-sync`、`library/keel:` 为 symlink 或 copy、`bin:` 已挂、`code-review: ok` |
 | B | 入口 2 | 退出码 `1`；`library/keel` 或 `bin` 报 `未安装 → keel install`；stderr 含 `doctor:` |
 | C | 入口 3 | 退出码 `1`；`library/keel: ⚠ 占用且不是 keel`；那个外来 `SKILL.md` 内容未被改写 |
 
