@@ -8,5 +8,6 @@
 | [review.md](./review.md) | install 后能 `find keel-review`；审查结论带 `human`，`required` 不得发布；Cursor 按本机绑定解析模型 | #7 S1–S3；#10 S1–S3 |
 | [doctor.md](./doctor.md) | `keel doctor` 只读报告挂载、占用与 code-review | 缺失或占用时退出码 1 |
 | [uninstall.md](./uninstall.md) | `keel uninstall` 只拆 keel 自己挂上的链接或副本 | 外人不删；`--keep-bin` 留 CLI |
+| [sync.md](./sync.md) | 仓库里有 `keel-sync`；install/doctor 能列出；Grok Bot 按该文件更新账号级 skill | #16 S1–S3 |
 
 未列入的 `/keel` 会话路由、各环节 skill 正文：本 Issue 不对则不要 Drive。新增用户可见 CLI 入口时在此加一行并补功能文件；验收 Story 对不上任何一行即 BLOCKED。

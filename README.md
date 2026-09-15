@@ -18,6 +18,7 @@
 | `keel-ticket` | 建 Issue 并切到 `feat/*` 或 `bugfix/*`（不在交付链上；你说了才跑） |
 | `keel-start` | 进仓看待办与残留分支（不在交付链上；你说了才跑） |
 | `cat-mode` | 风格（不在交付链上；你说了才跑；不启动 `/keel` 状态机） |
+| `keel-sync` | 把 Grok Bot 共享电脑上的 keel 技能更新到 `/workspace/keel`（不在交付链上；你说了才跑） |
 
 也可单独调用 `/keel-design` 等。问不问、写不写由 keel 的两份合同控制；`AGENTS.md` 管章节结构、Issue 骨架、分支与托管平台。
 
@@ -57,6 +58,15 @@ cd keel
 ```
 
 已 clone、且 `~/.local/bin` 在 PATH 时，之后用 `keel install` / `keel doctor` 即可；`--copy` 装出的 CLI 通过 `state.json` 找回仓库，仓库搬走后会直接报错，重新在新位置跑 `./bin/keel install` 或设 `KEEL_ROOT`。
+
+### 更新
+
+两套安装不要混用：
+
+| 目标 | 怎么更新 |
+|---|---|
+| Mac 上的 Grok / Claude / Cursor / Codex / Pi | 在 checkout `git pull`。已有 skill 改正文即生效（符号链接）。**新增** `skills/<name>/SKILL.md` 才再跑 `keel install`，然后 `keel doctor`。 |
+| Grok Bot 云端 bot | 副本在 `/workspace/keel`，`/` 菜单是登记快照。`git pull` **不够**。对任意 bot 打 `/keel-sync` 或说「keel 更新了」。不要在云端跑 `keel install` 冒充这次同步。 |
 
 ## 用法
 

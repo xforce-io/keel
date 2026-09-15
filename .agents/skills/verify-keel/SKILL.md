@@ -28,7 +28,7 @@ BIN="$HOME/.local/bin"
 全部成立才 Drive：
 
 1. `./bin/keel --home "$HOME" --bin-dir "$BIN" doctor` 退出码 `0`
-2. 输出含 `root:` 指向本仓库，且 `skills:` 列出 `keel keel-design keel-dev keel-how keel-issue keel-reflect keel-release keel-review keel-start keel-ticket keel-verify`
+2. 输出含 `root:` 指向本仓库，且 `skills:` 列出 `cat-mode keel keel-design keel-dev keel-how keel-issue keel-reflect keel-release keel-review keel-start keel-sync keel-ticket keel-verify`
 3. `library/keel` 与 `bin` 均为本 CLI 的 symlink 或 copy，不是 `未安装` / `占用且不是 keel`
 4. `code-review: ok`（来自 PATH 上的 `local-skill find`）
 

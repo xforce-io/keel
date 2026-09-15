@@ -64,3 +64,5 @@ description: >
 进仓不在本状态机内。用户说 `keel-start` / code start / 打开这个项目 / 待办时，再完整读取 `keel-start`。看完不默认 `route`。不调用 monastery。
 
 风格不在本状态机内。用户说 `cat-mode` 时再完整读取 `cat-mode`。`cat-mode` 不启动 route / design / dev / end-to-end。
+
+Grok Bot 技能同步不在本状态机内。用户说 `keel-sync` / keel 更新了 时再完整读取 `keel-sync`。`keel-sync` 不启动 route / design / dev / end-to-end。
