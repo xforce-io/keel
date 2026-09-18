@@ -26,4 +26,4 @@ description: >
 3. **Live（用户说全图/回归时）。** 按该手册 Launch → Doctor → Drive **全部**功能文件及各文件列出的每一条用户入口。证据目录：应用仓库 `.grok/verify-runs/regression/`（或不进 git 的用户给定 run id）。Cleanup 不得吃掉证据。
 4. **结束。** 完成表**不**交给 `keel-review`。三种结果之一：`clean`（覆盖完、无改动）、`changed`（只交了地图/手册修正）、`blocked`（覆盖不完或不能安全改手册）。不合入、不部署。
 
-无「全图 / 回归 / 维护循环」口语、又没有 Issue `S1…Sn` → `BLOCKED`，不要即兴点 UI。有 Issue 的证明走 `keel-verify`。
+用户明确调用 `keel-verify-maintain`，或说「全图 / 回归 / 维护循环」，即可执行上述维护，不要求 Issue。仅调用 skill 名或说「维护循环」时执行源码对照；用户说「全图 / 回归」时还须执行 Live。没有维护请求、又没有 Issue `S1…Sn` → `BLOCKED`，不要即兴点 UI。有 Issue 的证明走 `keel-verify`。

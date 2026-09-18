@@ -64,6 +64,8 @@ def run_keel(
     path = [str(ROOT / "bin"), env.get("PATH", "")]
     if with_local_skill:
         path.insert(0, str(fake_tools_dir(home)))
+    else:
+        path = [str(home / "empty-path")]
     env["PATH"] = os.pathsep.join(path)
     return subprocess.run(
         [sys.executable, str(cli), "--home", str(home), "--bin-dir", str(home / ".local" / "bin"), *args],
@@ -183,8 +185,8 @@ class KeelCopyModeTests(unittest.TestCase):
             self.assertFalse(library.is_symlink())
             self.assertTrue((library / "lookup.py").is_file())
             state = json.loads((home / ".config" / "keel" / "state.json").read_text(encoding="utf-8"))
-            self.assertEqual(Path(state["root"]), checkout)
-            self.assertIn(str(library), state["copies"])
+            self.assertEqual(Path(state["root"]), checkout.resolve())
+            self.assertIn(str(library.resolve()), state["copies"])
 
             for relative in ("skills/keel-verify/SKILL.md", "skills/keel-verify/lookup.py", "agents/reviewer.md"):
                 with (checkout / relative).open("a", encoding="utf-8") as handle:
@@ -219,7 +221,7 @@ class KeelCopyModeTests(unittest.TestCase):
             self.assertFalse(installed_cli.is_symlink())
             doctor = run_keel(home, "doctor", cli=installed_cli, root=None)
             self.assertEqual(doctor.returncode, 0, doctor.stderr + doctor.stdout)
-            self.assertIn(f"root: {checkout}", doctor.stdout)
+            self.assertIn(f"root: {checkout.resolve()}", doctor.stdout)
             again = run_keel(home, "install", "--copy", cli=installed_cli, root=None)
             self.assertEqual(again.returncode, 0, again.stderr + again.stdout)
 
@@ -944,7 +946,7 @@ class KeelVerifyLookupTests(unittest.TestCase):
         )
         self.assertEqual(
             sorted(handbook["feature_files"]),
-            ["doctor.md", "install.md", "review.md", "start.md", "ticket.md", "uninstall.md"],
+            ["doctor.md", "install.md", "review.md", "start.md", "sync.md", "ticket.md", "uninstall.md", "verify-gates.md"],
         )
 
 
