@@ -46,10 +46,10 @@ description: >
 
 已定位之后：
 
-- **route** — 「处理 Issue N」：只执行下一合法环节一份，然后停。下一刀是设计或实现、且还没有对将改子系统的机制说明时，下一合法环节是 `keel-how`。实现已做、尚未按手册在真路径上证明时，下一合法环节是 `keel-verify`。
+- **route** — 「处理 Issue N」：只执行下一合法环节一份，然后停。下一刀是设计或实现、且还没有对将改子系统的机制说明时，下一合法环节是 `keel-how`。实现已做、用户可见且尚未 `keel-verify` 完成表时，下一合法环节是 `keel-verify`，禁止以开 PR/MR 代替。
 - **design** — 「设计 Issue N」：`keel-how`（可按该环节 skip）→ `keel-design`，停在人工批准。
-- **dev** — 「开发 Issue N」：`keel-how`（可按该环节 skip）→ 若需 L1 且无提案则先 `keel-design`（写完继续，不等批）→ `keel-dev` → `keel-verify` → `keel-review`，停在可发布，不合入。
-- **end-to-end** — 「端到端完成」/「端到端改」：从下一合法环节执行到 `keel-release`；`keel-how` 在设计/实现前，`keel-verify` 在 `keel-review` 之前。用户要端到端但计划漏了 how/验证/审查/CI/合入时，计划不完整：补上或 `BLOCKED`。禁止默默丢掉。
+- **dev** — 「开发 Issue N」：`keel-how`（可按该环节 skip）→ 若需 L1 且无提案则先 `keel-design`（写完继续，不等批）→ `keel-dev` → `keel-verify` → `keel-review`，停在可发布，不合入。用户可见票在 `keel-dev` 之后必须 `keel-verify`；缺完成表不得进入 `keel-review` / `keel-release`。
+- **end-to-end** — 「端到端完成」/「端到端改」：从下一合法环节执行到 `keel-release`；`keel-how` 在设计/实现前，`keel-verify` 在 `keel-review` 之前。用户要端到端但计划漏了 how/验证/审查/CI/合入时，计划不完整：补上或 `BLOCKED`。禁止默默丢掉。用户可见且无 verify 完成表时不得开 PR/MR。
 
 「端到端完成」授权的是这条有范围的生命周期，不是绕过仓库策略、保护分支、审查硬条件、或未授权的合入/部署。`when-to-ask.md` 里未授权的项不得做，即使流程是 `end-to-end`。
 
@@ -66,3 +66,5 @@ description: >
 风格不在本状态机内。用户说 `cat-mode` 时再完整读取 `cat-mode`。`cat-mode` 不启动 route / design / dev / end-to-end。
 
 Grok Bot 技能同步不在本状态机内。用户说 `keel-sync` / keel 更新了 时再完整读取 `keel-sync`。`keel-sync` 不启动 route / design / dev / end-to-end。
+
+功能地图维护不在本状态机内。用户说 `keel-verify-maintain` / 维护循环 / 全图 / 回归（无 Issue 的地图保养）时再完整读取 `keel-verify-maintain`。有 Issue 的真路径证明仍走 `keel-verify`。

@@ -25,6 +25,7 @@ STAGE_SKILLS = (
     "keel-ticket",
     "keel-start",
     "keel-sync",
+    "keel-verify-maintain",
 )
 LOOKUP = ROOT / "skills" / "keel-verify" / "lookup.py"
 
@@ -361,6 +362,7 @@ class KeelHowContractTests(unittest.TestCase):
         self.assertNotIn("keel-reflect", order)
         self.assertNotIn("keel-ticket", order)
         self.assertNotIn("keel-start", order)
+        self.assertNotIn("keel-verify-maintain", order)
         router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("`keel-how`（可按该环节 skip）→ `keel-design`", router)
         self.assertIn("`keel-how`（可按该环节 skip）", router)
@@ -678,6 +680,60 @@ class KeelReviewContractTests(unittest.TestCase):
         self.assertIn("## 维护回归（无 Issue / 全图）", text)
         self.assertIn("完成表**不**交给 `keel-review`", text)
         self.assertIn(".grok/verify-runs/regression/", text)
+        self.assertIn("keel-verify-maintain", text)
+
+    def test_dev_blocks_unmapped_user_visible_stories(self) -> None:
+        dev = (ROOT / "skills" / "keel-dev" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("功能地图不是「额外证据文件」", dev)
+        self.assertIn("features/README.md", dev)
+        self.assertIn("对不上 → `BLOCKED`", dev)
+        self.assertIn("无用户路径", dev)
+        self.assertNotIn("不要新增项目没有的证据文件、截图工厂或额外 E2E 层", dev)
+
+    def test_release_requires_verify_table_for_user_visible(self) -> None:
+        release = (ROOT / "skills" / "keel-release" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("keel-verify", release)
+        self.assertIn("pytest", release)
+        self.assertIn("BLOCKED", release)
+        router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
+        route = router[router.index("- **route**") : router.index("- **design**")]
+        self.assertIn("禁止以开 PR/MR 代替", route)
+        self.assertIn("keel-verify", route)
+
+    def test_l2_test_plan_must_name_feature_file(self) -> None:
+        design = (ROOT / "skills" / "keel-design" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("features/<file>.md", design)
+        self.assertIn("一一对应", design)
+        when = (
+            ROOT / "skills" / "keel" / "references" / "when-to-write.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("features/<file>.md", when)
+
+    def test_verify_maintain_is_not_a_delivery_stage(self) -> None:
+        router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("功能地图维护不在本状态机内", router)
+        self.assertNotIn("keel-verify-maintain", _router_stage_order())
+        glossary = (ROOT / "docs" / "glossary.md").read_text(encoding="utf-8")
+        self.assertRegex(
+            glossary,
+            re.compile(r"^\| keel-verify-maintain \|.*不是交付环节", re.M),
+        )
+        self.assertRegex(
+            glossary,
+            re.compile(r"^\| 功能地图 \|", re.M),
+        )
+        maintain = (
+            ROOT / "skills" / "keel-verify-maintain" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("只编辑该 `verify-*` 目录", maintain)
+        self.assertIn("不改产品代码", maintain)
+        self.assertIn("完成表**不**交给 `keel-review`", maintain)
+        self.assertIn(".grok/verify-runs/regression/", maintain)
+        self.assertNotIn("git mv", maintain)
 
 
 class KeelVerifyLookupTests(unittest.TestCase):

@@ -12,6 +12,7 @@
 | `keel-design` | 写设计 |
 | `keel-dev` | 实现与 `S1…Sn` 验收表 |
 | `keel-verify` | 按应用仓库 `.agents/skills/verify-*` 驾驶手册与功能地图证明 S1 |
+| `keel-verify-maintain` | 保养功能地图（不在交付链上；全图/回归/维护循环时才跑） |
 | `keel-review` | 独立审查 |
 | `keel-release` | CI、PR/MR、合入；有 runbook 则部署 |
 | `keel-reflect` | 任务后复盘（不在交付链上；你说了才跑） |

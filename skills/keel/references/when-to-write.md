@@ -28,5 +28,5 @@ keel 任务里要不要写 L1 / L2 以本文为准，不以 AGENTS.md 的「L1 �
 - 权限 / 多租户 / 安全模型
 - L1 明确要求
 
-未命中 L2 则不建 `docs/design/`。
+未命中 L2 则不建 `docs/design/`。须写 L2 且含用户可见 Story 时，测试计划节点名 `features/<file>.md`，与用户可见 `S1…Sn` 一一对应。
 吃不准是否必须写 L1 → 写。

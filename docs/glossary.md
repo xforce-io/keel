@@ -8,6 +8,8 @@
 | keel-design | 环节 skill。写出所需设计并交回路由。 | 自批设计、design.md |
 | keel-dev | 环节 skill。实现已定位范围并填写 `S1…Sn` 验收表。 | 写完就算、development.md |
 | keel-verify | 环节 skill。按当前应用仓库 `.agents/skills/verify-*` 的驾驶手册与功能地图，在真路径上证明本 Issue 的 S1。 | .cursor 验证、旧 .grok/skills/verify-* 手册、pstack verify、合入后健康检查 |
+| 功能地图 | 应用仓库 `.agents/skills/verify-*/features/` 下按功能拆分的驾驶条目与 README 索引。用户可见 Story 必须对上其中一行。 | 证据文件、截图工厂、额外 E2E 层、pytest 验收表 |
+| keel-verify-maintain | 配套 skill。对照源码用户面保养功能地图，只改 `verify-*` 目录。不是交付环节。 | maintain-verification-skill、pstack 维护循环、keel-verify |
 | keel-review | 环节 skill。对最新精确目标做独立审查。 | 自己审自己、reviewers.md |
 | reviewer | Grok 审查 agent 类型。由 `keel install` 挂到 `~/.grok/agents/reviewer.md`，`permission_mode: plan`；模型 slug 留在本机（`~/.config/keel/reviewer` 或宿主配置），不写进 keel skill。 | setup-pstack 模型表、general-purpose 自审 |
 | keel-release | 环节 skill。CI、PR/MR、合入；有 runbook 则部署与核对。 | 本地跑起来、release.md |
