@@ -10,4 +10,6 @@
 | [uninstall.md](./uninstall.md) | `keel uninstall` 只拆 keel 自己挂上的链接或副本 | 外人不删；`--keep-bin` 留 CLI |
 | [sync.md](./sync.md) | 仓库里有 `keel-sync`；install/doctor 能列出；Grok Bot 按该文件更新账号级 skill | #16 S1–S3 |
 
+| [verify-gates.md](./verify-gates.md) | 开发地图覆盖、verify 发布门禁、设计映射与独立维护入口 | #18 S1–S4 |
+
 未列入的 `/keel` 会话路由、各环节 skill 正文：本 Issue 不对则不要 Drive。新增用户可见 CLI 入口时在此加一行并补功能文件；验收 Story 对不上任何一行即 BLOCKED。

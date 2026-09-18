@@ -50,7 +50,7 @@ description: >
 
 ## 维护回归（无 Issue / 全图）
 
-用户明确说「全图」「回归」「维护循环」时：仍用 `lookup.py` 找到的 `verify-*`，Drive `features/` **全部**功能文件（及各文件列出的每一条用户入口）。证据目录用应用仓库 `.grok/verify-runs/regression/`（或不进 git 的用户给定 run id）。完成表**不**交给 `keel-review`。
+用户明确说「全图」「回归」「维护循环」或 `keel-verify-maintain` 时：完整读取 `../keel-verify-maintain/SKILL.md` 再执行。仍用 `lookup.py` 找到的 `verify-*`。证据目录用应用仓库 `.grok/verify-runs/regression/`（或不进 git 的用户给定 run id）。完成表**不**交给 `keel-review`。本文件不展开维护步骤。
 
 无上述口语、又没有 Issue `S1…Sn` → 仍 `BLOCKED`，不要即兴点 UI。
 

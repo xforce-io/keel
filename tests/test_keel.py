@@ -25,6 +25,7 @@ STAGE_SKILLS = (
     "keel-ticket",
     "keel-start",
     "keel-sync",
+    "keel-verify-maintain",
 )
 LOOKUP = ROOT / "skills" / "keel-verify" / "lookup.py"
 
@@ -63,6 +64,8 @@ def run_keel(
     path = [str(ROOT / "bin"), env.get("PATH", "")]
     if with_local_skill:
         path.insert(0, str(fake_tools_dir(home)))
+    else:
+        path = [str(home / "empty-path")]
     env["PATH"] = os.pathsep.join(path)
     return subprocess.run(
         [sys.executable, str(cli), "--home", str(home), "--bin-dir", str(home / ".local" / "bin"), *args],
@@ -182,8 +185,8 @@ class KeelCopyModeTests(unittest.TestCase):
             self.assertFalse(library.is_symlink())
             self.assertTrue((library / "lookup.py").is_file())
             state = json.loads((home / ".config" / "keel" / "state.json").read_text(encoding="utf-8"))
-            self.assertEqual(Path(state["root"]), checkout)
-            self.assertIn(str(library), state["copies"])
+            self.assertEqual(Path(state["root"]), checkout.resolve())
+            self.assertIn(str(library.resolve()), state["copies"])
 
             for relative in ("skills/keel-verify/SKILL.md", "skills/keel-verify/lookup.py", "agents/reviewer.md"):
                 with (checkout / relative).open("a", encoding="utf-8") as handle:
@@ -218,7 +221,7 @@ class KeelCopyModeTests(unittest.TestCase):
             self.assertFalse(installed_cli.is_symlink())
             doctor = run_keel(home, "doctor", cli=installed_cli, root=None)
             self.assertEqual(doctor.returncode, 0, doctor.stderr + doctor.stdout)
-            self.assertIn(f"root: {checkout}", doctor.stdout)
+            self.assertIn(f"root: {checkout.resolve()}", doctor.stdout)
             again = run_keel(home, "install", "--copy", cli=installed_cli, root=None)
             self.assertEqual(again.returncode, 0, again.stderr + again.stdout)
 
@@ -361,6 +364,7 @@ class KeelHowContractTests(unittest.TestCase):
         self.assertNotIn("keel-reflect", order)
         self.assertNotIn("keel-ticket", order)
         self.assertNotIn("keel-start", order)
+        self.assertNotIn("keel-verify-maintain", order)
         router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("`keel-how`（可按该环节 skip）→ `keel-design`", router)
         self.assertIn("`keel-how`（可按该环节 skip）", router)
@@ -678,6 +682,60 @@ class KeelReviewContractTests(unittest.TestCase):
         self.assertIn("## 维护回归（无 Issue / 全图）", text)
         self.assertIn("完成表**不**交给 `keel-review`", text)
         self.assertIn(".grok/verify-runs/regression/", text)
+        self.assertIn("keel-verify-maintain", text)
+
+    def test_dev_blocks_unmapped_user_visible_stories(self) -> None:
+        dev = (ROOT / "skills" / "keel-dev" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("功能地图不是「额外证据文件」", dev)
+        self.assertIn("features/README.md", dev)
+        self.assertIn("对不上 → `BLOCKED`", dev)
+        self.assertIn("无用户路径", dev)
+        self.assertNotIn("不要新增项目没有的证据文件、截图工厂或额外 E2E 层", dev)
+
+    def test_release_requires_verify_table_for_user_visible(self) -> None:
+        release = (ROOT / "skills" / "keel-release" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("keel-verify", release)
+        self.assertIn("pytest", release)
+        self.assertIn("BLOCKED", release)
+        router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
+        route = router[router.index("- **route**") : router.index("- **design**")]
+        self.assertIn("禁止以开 PR/MR 代替", route)
+        self.assertIn("keel-verify", route)
+
+    def test_l2_test_plan_must_name_feature_file(self) -> None:
+        design = (ROOT / "skills" / "keel-design" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("features/<file>.md", design)
+        self.assertIn("一一对应", design)
+        when = (
+            ROOT / "skills" / "keel" / "references" / "when-to-write.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("features/<file>.md", when)
+
+    def test_verify_maintain_is_not_a_delivery_stage(self) -> None:
+        router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("功能地图维护不在本状态机内", router)
+        self.assertNotIn("keel-verify-maintain", _router_stage_order())
+        glossary = (ROOT / "docs" / "glossary.md").read_text(encoding="utf-8")
+        self.assertRegex(
+            glossary,
+            re.compile(r"^\| keel-verify-maintain \|.*不是交付环节", re.M),
+        )
+        self.assertRegex(
+            glossary,
+            re.compile(r"^\| 功能地图 \|", re.M),
+        )
+        maintain = (
+            ROOT / "skills" / "keel-verify-maintain" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("只编辑该 `verify-*` 目录", maintain)
+        self.assertIn("不改产品代码", maintain)
+        self.assertIn("完成表**不**交给 `keel-review`", maintain)
+        self.assertIn(".grok/verify-runs/regression/", maintain)
+        self.assertNotIn("git mv", maintain)
 
 
 class KeelVerifyLookupTests(unittest.TestCase):
@@ -888,7 +946,7 @@ class KeelVerifyLookupTests(unittest.TestCase):
         )
         self.assertEqual(
             sorted(handbook["feature_files"]),
-            ["doctor.md", "install.md", "review.md", "start.md", "ticket.md", "uninstall.md"],
+            ["doctor.md", "install.md", "review.md", "start.md", "sync.md", "ticket.md", "uninstall.md", "verify-gates.md"],
         )
 
 
