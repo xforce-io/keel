@@ -47,7 +47,7 @@ flowchart LR
 
 ## 7 模块
 
-`bin/keel` 新增 check 处理及参数入口；不改安装机制。`keel-release` 增加调用责任及失败恢复，引用输入合同。项目提供平台结果，工具没有平台分支。示例同时作为测试固定输入，避免维护两份 schema 样例。
+`bin/keel` 新增 check 处理及参数入口；不改安装机制。`keel-release` 增加调用责任及失败恢复，引用输入合同。`keel` 入口强调 end-to-end 必经 release，未完成不得宣称交付完成；受阻报告停点、原因和下一步，route/design/dev 保持原停点。该规则仅为路由合同，不声称程序自动拦截，也不放入 cat-mode。项目提供平台结果，工具没有平台分支。示例同时作为测试固定输入，避免维护两份 schema 样例。
 
 ## 8 API/CLI
 

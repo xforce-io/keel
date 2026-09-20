@@ -30,6 +30,8 @@
 
 使用 scratch `install --copy` 后的 CLI 再跑完整样例并运行 doctor；应 PASS，证明新增命令不依赖漏装的模块。Cleanup 只卸本次 scratch。
 
+同时读取 scratch 安装的 `keel/SKILL.md`：end-to-end 必经 release，阅读/计划/check PASS 不等于执行完成；受阻报告已完成与未完成环节、原因和下一步；route/design/dev 保持合法停点。这是已安装合同验证，不声称已驱动任意下游 agent。
+
 ## Evidence
 
 `.agents/verify-runs/20/` 保存当前候选 SHA、doctor 输出、每个入口的命令/退出码/结果及 S1/S2/S3 完成表。原始日志不提交。不要把合成证据描述成真实任务的设计批准、审查或 CI。
