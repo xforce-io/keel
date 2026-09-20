@@ -653,14 +653,16 @@ class KeelReviewContractTests(unittest.TestCase):
         self.assertIn("无法证明", chunk)
         self.assertIn("不得 `optional`", chunk)
 
-    def test_release_requires_pass_and_optional(self) -> None:
+    def test_release_requires_pass_and_satisfied_human_gate(self) -> None:
         release = (ROOT / "skills" / "keel-release" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("`human: optional`", release)
         self.assertIn("`human: required`", release)
         self.assertIn("BLOCKED", release)
         self.assertIn("reviewer_host", release)
         review = (ROOT / "skills" / "keel-review" / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("`PASS` 且 `human: optional`", review)
+        self.assertIn("`PASS` 且（`human: optional`", review)
+        self.assertIn("human_approval", release)
+        self.assertIn("human_approval", review)
 
     def test_review_model_resolves_from_bind_not_inherit(self) -> None:
         review = (ROOT / "skills" / "keel-review" / "SKILL.md").read_text(encoding="utf-8")
@@ -946,7 +948,7 @@ class KeelVerifyLookupTests(unittest.TestCase):
         )
         self.assertEqual(
             sorted(handbook["feature_files"]),
-            ["doctor.md", "install.md", "review.md", "start.md", "sync.md", "ticket.md", "uninstall.md", "verify-gates.md"],
+            ["delivery-gate.md", "doctor.md", "install.md", "review.md", "start.md", "sync.md", "ticket.md", "uninstall.md", "verify-gates.md"],
         )
 
 

@@ -85,8 +85,19 @@ keel-reflect
 
 模式：`route` · `design` · `dev` · `end-to-end`。
 
+## 交付证据校验
+
+`keel check` 是平台中立的只读工具，不调用 GitHub/GitLab API，不运行 CI，也不执行合入。输入合同、完整示例及调用方责任见 [交付校验](skills/keel-release/references/check.md)。
+
+```bash
+keel check /path/to/delivery.json --issue 20 --candidate "$candidate_sha" \
+  --stories S1,S2,S3 --required-ci unit --json
+```
+
+退出码 0 表示输入通过，1 表示阻断，命令行语法错误为 2。是否接入 CI 由项目决定；release 环节在实际合入前调用校验。证据来源真实性、当前候选和必需项清单由调用方确认。
+
 ## 开发
 
 ```bash
-python3 -m unittest tests.test_keel tests.test_keel_reflect_inspect
+python3 -m unittest tests.test_keel tests.test_keel_reflect_inspect tests.test_keel_check
 ```

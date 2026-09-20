@@ -5,11 +5,13 @@ description: Use when keel-verify must drive the keel CLI on a real user path (i
 
 # verify-keel
 
-驾驶 **keel CLI**（`bin/keel`：install / doctor / uninstall）。Issue 验收对 `features/`；只 Drive 对上的功能文件。
+驾驶 **keel CLI**（`bin/keel`：install / doctor / uninstall / check）。Issue 验收对 `features/`；只 Drive 对上的功能文件。
 
 本仓库是插件仓，也是这份手册所在的应用仓。`install` 挂的是 `skills/keel*`，**不**写入应用仓库的 `.agents/skills/verify-*`。
 
 ## Launch
+
+check 的隔离输入、三类样例和恢复路径见 `features/delivery-gate.md`。该命令不需要 Git 仓库或平台凭据；仍按下述 scratch install / doctor 验证安装可用，再运行 check。不得对真实交付材料做失败注入。
 
 在**本仓库当前分支**跑 CLI，不要用 PATH 上过期的 `keel`。Drive 一律走 scratch `--home`，禁止对现网家目录做 install / uninstall。
 

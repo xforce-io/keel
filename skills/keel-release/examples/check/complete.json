@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "issue": 20,
+  "candidate_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "design": {
+    "status": "pass",
+    "version": "approved-design-v1",
+    "evidence": {
+      "path": "evidence.txt",
+      "sha256": "ae349b9529da6b5478420ef2119ce2b6d00c03ed6e86dae76dddcad15fa00f81"
+    }
+  },
+  "stories": [
+    {
+      "id": "S1",
+      "status": "pass",
+      "candidate_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "evidence": {
+        "path": "evidence.txt",
+        "sha256": "ae349b9529da6b5478420ef2119ce2b6d00c03ed6e86dae76dddcad15fa00f81"
+      }
+    },
+    {
+      "id": "S2",
+      "status": "pass",
+      "candidate_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "evidence": {
+        "path": "evidence.txt",
+        "sha256": "ae349b9529da6b5478420ef2119ce2b6d00c03ed6e86dae76dddcad15fa00f81"
+      }
+    },
+    {
+      "id": "S3",
+      "status": "pass",
+      "candidate_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "evidence": {
+        "path": "evidence.txt",
+        "sha256": "ae349b9529da6b5478420ef2119ce2b6d00c03ed6e86dae76dddcad15fa00f81"
+      }
+    }
+  ],
+  "verify": {
+    "user_path": "cli",
+    "status": "pass",
+    "candidate_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "evidence": {
+      "path": "evidence.txt",
+      "sha256": "ae349b9529da6b5478420ef2119ce2b6d00c03ed6e86dae76dddcad15fa00f81"
+    }
+  },
+  "review": {
+    "status": "PASS",
+    "human": "optional",
+    "reviewer_host": "test-host",
+    "reviewer_model": "test-reviewer",
+    "source": "host-config",
+    "candidate_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "evidence": {
+      "path": "evidence.txt",
+      "sha256": "ae349b9529da6b5478420ef2119ce2b6d00c03ed6e86dae76dddcad15fa00f81"
+    }
+  },
+  "ci": {
+    "checks": [
+      {
+        "name": "unit",
+        "status": "pass",
+        "candidate_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "evidence": {
+          "path": "evidence.txt",
+          "sha256": "ae349b9529da6b5478420ef2119ce2b6d00c03ed6e86dae76dddcad15fa00f81"
+        }
+      }
+    ],
+    "status": "pass",
+    "candidate_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "evidence": {
+      "path": "evidence.txt",
+      "sha256": "ae349b9529da6b5478420ef2119ce2b6d00c03ed6e86dae76dddcad15fa00f81"
+    }
+  }
+}

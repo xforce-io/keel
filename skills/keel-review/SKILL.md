@@ -35,11 +35,11 @@ description: >
 
 修复由实现代理做（回到 `keel-dev`）。每轮修复后重跑受影响测试、刷新验收表，再经 `keel-verify`（对新 SHA 重跑驾驶证明，或按该环节规则写明 skip），然后审查新 diff。禁止把上一轮的 verify 证据挂到新目标上。最多三轮仍非 `PASS` 则交给人。
 
-`PASS` 且 `human: optional` 才能交给发布。`P0`–`P2` 阻塞；`P3` 建议，除非项目更严。`CHANGES_REQUESTED` 回到 `keel-dev` → `keel-verify` 后再审；`BLOCKED` 停在缺失证据或能力。代码审查不代替验收表。
+`PASS` 且（`human: optional`，或 `human: required` 已获得当前候选的真实人工批准）才能交给发布。`P0`–`P2` 阻塞；`P3` 建议，除非项目更严。`CHANGES_REQUESTED` 回到 `keel-dev` → `keel-verify` 后再审；`BLOCKED` 停在缺失证据或能力。代码审查不代替验收表。
 
 结论必须同时有恰好一个三态（`PASS` / `CHANGES_REQUESTED` / `BLOCKED`）、恰好一个 `human: required` 或 `human: optional`，以及 `reviewer_host`、`reviewer_model`、`source`（恰好一个：`user` / `bind-file` / `host-config` / `complementary`）。缺 `human`、缺三列任一、两个都写、或其它取值 → 审查未完成，不得进入 `keel-release`。不要收成第四个三态。`CHANGES_REQUESTED` / `BLOCKED` 时 `human` 与三列仍必须出现。`human` 由 Reviewer 给出；父代理不得补写或改写。外部 `code-review` 仍只管缺陷、证据与 `P0`–`P3`。
 
-`PASS` + `human: required` → 停，把分级意见给人，不进入 `keel-release`。
+`PASS` + `human: required` → 未获当前候选的人工批准时停，把分级意见给人。获得真实批准后，按 [交付校验合同](../keel-release/references/check.md) 记录独立的 `human_approval`，重新校验后可进入 `keel-release`；保留 Reviewer 原始 `human: required`，不改成 optional。会话批准有效，不强制用户重复去平台批准；候选改变后须重新人审。人工批准不能覆盖 `CHANGES_REQUESTED` / `BLOCKED`。
 
 硬条件（任一成立必须 `human: required`，不得 `optional`）：
 
