@@ -57,6 +57,8 @@ keel check RECORD --issue N --candidate SHA --stories S1,S2 [--required-ci NAME]
 
 字段、skip 条件、退出码和结果结构以 [校验合同 v1](../../skills/keel-release/references/check.md) 为准。Issue、候选、Stories 与必需 CI 均从调用方传入，不能从索引反推。索引有 design、stories、verify、review、ci；所有版本适用项对齐候选，design 另记批准版本。每个证据引用为路径与 SHA-256。
 
+人工门采用独立 `human_approval` 记录：Reviewer PASS 且 human optional 时无需此记录；required 时须有同候选的 approved、批准人和有效本地证据。保留 Reviewer 的 required，不修改其原结论。会话中的真实批准可留存为来源，不要求平台 review。已提供的无效批准即使在 optional 状态也阻断；批准不能覆盖非 PASS 审查或其它失败门禁。此为用户确认修复的闭环缺口，无新增平台集成。
+
 ## 9 边界
 
 文件存在且摘要一致不是来源认证，也不是自然语言结论核对。工具不能识别未传入的真实必需项，不能阻止绕过调用或校验后版本变化。调用方在实际操作前重新取得事实并核对现有人工/分支/独立审查规则，不以 CLI 代替自身职责。证据中的命令不执行；URL 不自动访问。

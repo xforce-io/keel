@@ -93,6 +93,56 @@ class DeliveryCheckTests(unittest.TestCase):
                 d = copy.deepcopy(self.data); d['review'][field] = value
                 self.blocked(d)
 
+    def approved_record(self):
+        data = copy.deepcopy(self.data)
+        data['review']['human'] = 'required'
+        data['human_approval'] = dict(status='approved', actor='test-human',
+                                     candidate_sha=SHA, evidence=copy.deepcopy(data['review']['evidence']))
+        return data
+
+    def test_human_approval_closes_required_gate_without_rewriting_review(self):
+        data = self.approved_record()
+        run = self.run_check(data)
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertEqual(json.loads(run.stdout)['status'], 'PASS')
+        self.assertEqual(json.loads(self.record.read_text())['review']['human'], 'required')
+        del data['human_approval']
+        failed = self.blocked(data)
+        self.assertIn('human_approval.status', [c['id'] for c in failed])
+
+    def test_human_approval_requires_all_fields_and_current_evidence(self):
+        for field in ('status', 'actor', 'candidate_sha', 'evidence'):
+            data = self.approved_record(); del data['human_approval'][field]
+            self.blocked(data)
+        for field, value in [('status', 'pending'), ('status', 'rejected'), ('actor', ' '),
+                             ('candidate_sha', 'b' * 40), ('evidence', {'path': 'missing'})]:
+            with self.subTest(field=field, value=value):
+                data = self.approved_record(); data['human_approval'][field] = value
+                self.blocked(data)
+        for value in (None, [], True, 5, 'approved'):
+            data = self.approved_record(); data['human_approval'] = value
+            self.blocked(data)
+        data = self.approved_record(); data['human_approval']['evidence']['sha256'] = '0' * 64
+        self.blocked(data)
+
+    def test_human_approval_never_overrides_review_or_other_gates(self):
+        for field, value in [('status', 'CHANGES_REQUESTED'), ('status', 'BLOCKED'),
+                             ('human', None), ('candidate_sha', 'b' * 40), ('source', 'fake')]:
+            data = self.approved_record(); data['review'][field] = value
+            self.blocked(data)
+        data = self.approved_record(); data['stories'][0]['status'] = 'fail'
+        self.blocked(data)
+        data = self.approved_record(); data['ci']['checks'][0]['status'] = 'pending'
+        self.blocked(data)
+
+    def test_optional_does_not_hide_invalid_supplied_approval(self):
+        data = self.approved_record(); data['review']['human'] = 'optional'
+        self.assertEqual(self.run_check(data).returncode, 0)
+        data['human_approval']['status'] = 'rejected'
+        self.blocked(data)
+        del data['human_approval']
+        self.assertEqual(self.run_check(data).returncode, 0)
+
     def test_all_candidate_bindings(self):
         for section in ('stories', 'verify', 'review', 'ci'):
             d = copy.deepcopy(self.data)

@@ -2,14 +2,13 @@
 name: keel-release
 description: >
   Use when the user says keel-release or /keel-release, or when keel routes
-  to CI, PR/MR, merge, or deploy. Land only after independent review PASS
-  and human: optional.
+  to CI, PR/MR, merge, or deploy. Land only after independent review PASS and the human gate is satisfied.
   Do not invent deploy or rollback commands.
 ---
 
 # keel-release
 
-只在审查 `PASS`、且 `human: optional`、且结论含 `reviewer_host` / `reviewer_model` / `source`、且验收表没有阻塞 `fail` 或缺失 `S*` 行之后继续。`human: required`、缺 `human`、或缺三列任一 → `BLOCKED`，不合入。允许的 `skip` 留在 PR/MR 上可见，不变成 pass。
+只在审查 `PASS`、且（`human: optional` 或 `human: required` 已有同候选的有效 `human_approval`）、且结论含 `reviewer_host` / `reviewer_model` / `source`、且验收表没有阻塞 `fail` 或缺失 `S*` 行之后继续。`human: required` 但缺有效人工批准、缺 `human`、或缺三列任一 → `BLOCKED`，不合入。允许的 `skip` 留在 PR/MR 上可见，不变成 pass。
 
 用户可见票还须有 `keel-verify` 完成表（每个对上的功能 `pass|skip`、入口、证据路径）。只有 `keel-dev` 的 pytest / HTTP 验收表 → `BLOCKED`，不准开或合 PR/MR。无用户界面且 dev 表已写「无用户路径」的 `skip` 可以没有 Drive 证据。
 

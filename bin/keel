@@ -533,7 +533,19 @@ def commandCheck(args: argparse.Namespace) -> int:
     review = data.get("review")
     review = review if isinstance(review, dict) else {}
     result("review.status", review.get("status") == "PASS", "独立审查须 PASS", "keel-review")
-    result("review.human", review.get("human") == "optional", "human 须为 optional；required 交人处理", "keel-review")
+    result("review.human", review.get("human") in ("optional", "required"),
+           "human 须为 optional 或 required；不得改写 Reviewer 原结论", "keel-review")
+    if review.get("human") == "required" or "human_approval" in data:
+        approval = data.get("human_approval")
+        approval = approval if isinstance(approval, dict) else {}
+        result("human_approval.status", approval.get("status") == "approved",
+               "须记录真实人工批准；缺失、待定或拒绝均不能放行", "keel-review")
+        result("human_approval.actor", text(approval.get("actor")),
+               "须记录批准人；身份与授权范围由调用方核实", "keel-review")
+        result("human_approval.candidate", approval.get("candidate_sha") == args.candidate,
+               "人工批准须对应当前候选版本，旧版本批准不能复用", "keel-review")
+        result("human_approval.evidence", evidence(approval.get("evidence")),
+               "人工批准证据须可读且摘要一致；会话批准可由调用方留存原始依据", "keel-review")
     result("review.origin", text(review.get("reviewer_host")) and text(review.get("reviewer_model"))
            and review.get("source") in ("user", "bind-file", "host-config", "complementary"),
            "须有宿主、模型和合法来源字段；独立性由调用方核对", "keel-review")

@@ -18,11 +18,14 @@
 - `design`：`status: pass|skip`、`evidence`。pass 时需非空 `version` 标识已获批设计版本；skip 时需非空 `reason`。
 - `stories`：按调用方 `--stories` 顺序排列的数组，每行含 `id`、`status: pass|skip`、`candidate_sha`、`evidence`。skip 需非空 `reason`，证据指向允许该 skip 的依据。
 - `verify`：`user_path: cli|gui|none`、`status`、`candidate_sha`、`evidence`。cli/gui 只能 pass；none 可 pass 或有理由的 skip，skip 证据是“无用户路径”的依据，不要求驾驶产物。
-- `review`：`status: PASS`、`human: optional`、非空 `reviewer_host`/`reviewer_model`、`source: user|bind-file|host-config|complementary`、`candidate_sha`、`evidence`。其它状态、缺字段、human required 都阻断。不得因校验器只检查字段就代填 Reviewer 的字段。
+- `review`：`status: PASS`、`human: optional|required`、非空 `reviewer_host`/`reviewer_model`、`source: user|bind-file|host-config|complementary`、`candidate_sha`、`evidence`。其它状态或缺字段阻断；human required 时须有下述独立人工批准记录。不得因校验器只检查字段就代填 Reviewer 的字段。
+- 顶层 `human_approval`：`status: approved`、非空 `actor`、`candidate_sha`、`evidence`。review.human=required 时必填；optional 时可不提供，但提供了就同样严格校验，拒绝/过期/无效记录不能静默忽略。批准仅解除人审等待，不覆盖 review 非 PASS、旧审查、缺验证或失败 CI。无需改变 Reviewer 的 human 原值。
 - `ci`：`status`、`candidate_sha`、`evidence`、`checks`。每个 check 含非空唯一 `name`、`status: pass`、`candidate_sha`、`evidence`；必须包含所有 `--required-ci` 项，已提供的额外项同样必须 pass。无 CI 时仅允许 `status: skip`、空 checks、非空 reason 和说明无 CI 的证据；有必需项不能 skip。
 - 所有 `evidence`：`{"path": "原始文件路径", "sha256": "64 位小写 SHA-256"}`。相对路径以索引目录为准；绝对路径也可。文件须存在、可读且摘要匹配。目录、缺失文件、摘要不匹配不通过。
 
 所有适用候选字段均须与调用方传入 SHA 相同。设计版本独立于候选 SHA。文件摘要只能核对内容未变，不能认证作者、证明结论正确或识别一份被同步伪造的文件。工具不解析原始证据的自然语言；来源语义与索引是否一致须由调用方核对。仅自填 PASS 而没有有效文件引用不能通过，但补一份无意义文件并不能成为真实交付。
+
+人工批准可以来自真实用户会话，不要求 GitHub/GitLab 正式 review。调用方核对批准人、明确意图和对应候选后，将会话原始依据留存为证据文件并引用；不得把本任务修复授权当作尚未生成的新候选的人审批准。工具只核对记录，不认证人类身份或解析自然语言。批准不自动等于合入授权，具体操作仍遵循用户授权。
 
 ## 输出与恢复
 

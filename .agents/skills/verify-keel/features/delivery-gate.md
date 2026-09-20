@@ -15,7 +15,7 @@
 1. 删除/重复验收行，或把一行改 fail：BLOCKED。
 2. 删除 verify，或将证据路径改为不存在文件：BLOCKED。
 3. 删除 review、改 CHANGES_REQUESTED 或非法 source：BLOCKED。
-4. human 改 required 或删除：BLOCKED，说明需人处理。
+4. human 改 required 且无批准，或删除 human：BLOCKED。保留 required 并补同候选有效 human_approval 后 PASS；改成旧 SHA、缺批准人、证据损坏或 rejected 后 BLOCKED。人工批准不得覆盖 CHANGES_REQUESTED 或失败 CI。
 5. 删除设计 version 或 evidence：BLOCKED。
 6. 必需 CI 删除、fail 或 pending：BLOCKED。
 7. --candidate 换成 40 个 b：旧索引 BLOCKED。

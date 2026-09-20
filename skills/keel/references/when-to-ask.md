@@ -6,7 +6,7 @@ keel 任务里要不要问人以本文为准，不以 AGENTS.md「评审通过�
 必须问（缺授权则停）：
 
 - force-push 到共享分支
-- 合入默认分支（授权=审查 PASS 且 human: optional，或人明确说合入）
+- 合入默认分支（授权=审查 PASS 且人工门已满足（human: optional，或 required 已有当前候选的真实批准），或人明确说合入）
 - 部署
 - 删生产数据
 - 对客消息
@@ -33,4 +33,4 @@ keel 任务里要不要问人以本文为准，不以 AGENTS.md「评审通过�
 | 写完 L1 是否停 | 流程：`design` 停；`dev` / `end-to-end` 继续 | 用户点名的流程，不是本表 |
 | 合入前要不要人看审查 | `keel-review` 的 `human: required` 或 `human: optional` | Reviewer；硬条件不得 `optional` |
 
-本表「合入默认分支」的授权就是审查 `PASS` 且 `human: optional`（或人明确说合入）。`keel-design` 不另给 `human:` 字段。
+本表「合入默认分支」的授权就是审查 `PASS` 且人工门已满足（`human: optional`，或 `required` 已有当前候选的真实批准；也可由人明确授权合入）。`keel-design` 不另给 `human:` 字段。
