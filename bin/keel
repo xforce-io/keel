@@ -432,7 +432,7 @@ def commandCheck(args: argparse.Namespace) -> int:
     import re
 
     checks: list[dict] = []
-    record_path = Path(args.record).expanduser().resolve()
+    record_path = Path(args.record)
 
     def result(name: str, ok: bool, reason: str, stage: str, status: str = "pass") -> None:
         checks.append({"id": name, "status": status if ok else "fail", "reason": reason,
@@ -504,10 +504,11 @@ def commandCheck(args: argparse.Namespace) -> int:
     if not valid_input:
         return emit()
     try:
+        record_path = record_path.expanduser().resolve()
         data = json.loads(record_path.read_text(encoding="utf-8"), object_pairs_hook=no_duplicates)
         if not isinstance(data, dict):
             raise ValueError("索引必须为 JSON 对象")
-    except (OSError, ValueError, RecursionError) as exc:
+    except (OSError, ValueError, RuntimeError) as exc:
         result("record", False, f"无法读取索引：{exc}", "keel-issue")
         return emit()
     result("schema", type(data.get("schema_version")) is int and data["schema_version"] == 1,

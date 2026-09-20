@@ -215,6 +215,11 @@ class DeliveryCheckTests(unittest.TestCase):
         d = copy.deepcopy(self.data); d['ci']['checks'][0]['name'] = {}
         self.blocked(d)
 
+    def test_unexpandable_record_path_returns_blocked_json(self):
+        self.record = Path('~keel_nonexistent_user_8206942251/delivery.json')
+        failed = self.blocked(None)
+        self.assertEqual([c['id'] for c in failed], ['record'])
+
     def test_arguments_and_schema(self):
         for extra in (('--stories', 'S1,S1'), ('--candidate', 'short'), ('--issue', '0')):
             self.blocked(self.data, *extra)
