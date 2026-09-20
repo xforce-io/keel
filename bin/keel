@@ -426,6 +426,137 @@ def commandDoctor(args: argparse.Namespace) -> int:
     return 0
 
 
+def commandCheck(args: argparse.Namespace) -> int:
+    """Check a caller-supplied evidence index without contacting a platform."""
+    import hashlib
+    import re
+
+    checks: list[dict] = []
+    record_path = Path(args.record).expanduser().resolve()
+
+    def result(name: str, ok: bool, reason: str, stage: str, status: str = "pass") -> None:
+        checks.append({"id": name, "status": status if ok else "fail", "reason": reason,
+                       "source": f"{record_path}#{name}", "next_stage": None if ok else stage,
+                       "resume_when": None if ok else "修正该项及其原始证据后重新运行 check"})
+
+    def emit() -> int:
+        passed = all(c["status"] != "fail" for c in checks)
+        report = {"schema_version": 1, "status": "PASS" if passed else "BLOCKED",
+                  "issue": args.issue, "candidate_sha": args.candidate, "checks": checks}
+        if args.json:
+            print(json.dumps(report, ensure_ascii=False, indent=2))
+        else:
+            print(report["status"])
+            for c in checks:
+                print(f'{c["id"]}: {c["status"]} — {c["reason"]}')
+                if c["next_stage"]:
+                    print(f'  → {c["next_stage"]}: {c["resume_when"]}')
+        return 0 if passed else 1
+
+    def no_duplicates(pairs: list) -> dict:
+        value: dict = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError(f"重复 JSON 字段: {key}")
+            value[key] = item
+        return value
+
+    def text(value: object) -> bool:
+        return isinstance(value, str) and bool(value.strip())
+
+    def evidence(value: object) -> bool:
+        if not isinstance(value, dict) or not text(value.get("path")):
+            return False
+        digest = value.get("sha256")
+        if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+            return False
+        path = Path(value["path"])
+        if not path.is_absolute():
+            path = record_path.parent / path
+        try:
+            return path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == digest
+        except (OSError, ValueError):
+            return False
+
+    def gate(name: str, value: object, stage: str, *, candidate: bool = True,
+             allow_skip: bool = False) -> dict:
+        item = value if isinstance(value, dict) else {}
+        state = item.get("status")
+        valid = state == "pass" or (state == "skip" and allow_skip and text(item.get("reason")))
+        reason = "要求 pass；允许的 skip 须有非空理由" if allow_skip else "要求 pass"
+        if state == "skip" and text(item.get("reason")):
+            reason += f"；skip: {item['reason']}"
+        result(name + ".status", bool(valid), reason, stage, "skip" if state == "skip" else "pass")
+        if candidate:
+            result(name + ".candidate", item.get("candidate_sha") == args.candidate,
+                   "证据候选版本须与调用方指定版本一致", stage)
+        result(name + ".evidence", evidence(item.get("evidence")),
+               "原始证据须为可读文件且 SHA-256 匹配（不认证作者或内容真实性）", stage)
+        return item
+
+    expected = args.stories.split(",")
+    valid_input = (args.issue > 0 and bool(re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", args.candidate))
+                   and all(re.fullmatch(r"S[1-9][0-9]*", s) for s in expected)
+                   and len(set(expected)) == len(expected)
+                   and all(text(s) for s in args.required_ci)
+                   and len(set(args.required_ci)) == len(args.required_ci))
+    result("input", valid_input, "issue 为正整数；候选为完整 SHA；Stories/必需 CI 无重复", "keel-issue")
+    if not valid_input:
+        return emit()
+    try:
+        data = json.loads(record_path.read_text(encoding="utf-8"), object_pairs_hook=no_duplicates)
+        if not isinstance(data, dict):
+            raise ValueError("索引必须为 JSON 对象")
+    except (OSError, ValueError, RecursionError) as exc:
+        result("record", False, f"无法读取索引：{exc}", "keel-issue")
+        return emit()
+    result("schema", type(data.get("schema_version")) is int and data["schema_version"] == 1,
+           "只接受 schema_version=1", "keel-issue")
+    result("issue", type(data.get("issue")) is int and data["issue"] == args.issue,
+           "Issue 须与调用方指定编号一致", "keel-issue")
+    result("candidate", data.get("candidate_sha") == args.candidate,
+           "索引须对应调用方当前候选版本", "keel-dev")
+    design = gate("design", data.get("design"), "keel-design", candidate=False, allow_skip=True)
+    result("design.version", design.get("status") == "skip" or text(design.get("version")),
+           "适用设计须指明获批版本；批准与版本的真实性由调用方核对", "keel-design")
+    stories = data.get("stories")
+    rows = stories if isinstance(stories, list) else []
+    ids = [s.get("id") if isinstance(s, dict) else None for s in rows]
+    result("stories", ids == expected, "验收行须与调用方 Stories 的编号、顺序、数量完全一致", "keel-dev")
+    for n, row in enumerate(rows):
+        gate(f"stories.{n + 1}", row, "keel-dev", allow_skip=True)
+    verify = data.get("verify")
+    path_type = verify.get("user_path") if isinstance(verify, dict) else None
+    result("verify.user_path", path_type in ("cli", "gui", "none"),
+           "用户路径分类必须为 cli / gui / none", "keel-verify")
+    gate("verify", verify, "keel-verify", allow_skip=path_type == "none")
+    review = data.get("review")
+    review = review if isinstance(review, dict) else {}
+    result("review.status", review.get("status") == "PASS", "独立审查须 PASS", "keel-review")
+    result("review.human", review.get("human") == "optional", "human 须为 optional；required 交人处理", "keel-review")
+    result("review.origin", text(review.get("reviewer_host")) and text(review.get("reviewer_model"))
+           and review.get("source") in ("user", "bind-file", "host-config", "complementary"),
+           "须有宿主、模型和合法来源字段；独立性由调用方核对", "keel-review")
+    result("review.candidate", review.get("candidate_sha") == args.candidate,
+           "审查须对应当前候选版本", "keel-review")
+    result("review.evidence", evidence(review.get("evidence")), "审查原始证据可读且摘要一致", "keel-review")
+    ci = data.get("ci")
+    ci = ci if isinstance(ci, dict) else {}
+    gate("ci", ci, "keel-release", allow_skip=not args.required_ci)
+    ci_rows = ci.get("checks")
+    ci_rows = ci_rows if isinstance(ci_rows, list) else []
+    names = [c.get("name") if isinstance(c, dict) else None for c in ci_rows]
+    valid_names = all(text(n) for n in names)
+    result("ci.checks", isinstance(ci.get("checks"), list) and valid_names
+           and (len(set(names)) == len(names) if valid_names else False)
+           and all(n in names for n in args.required_ci)
+           and (bool(names) if ci.get("status") == "pass" else not names),
+           "必需 CI 不得缺失或重复；无 CI 必须显式 skip 并提供依据", "keel-release")
+    for n, row in enumerate(ci_rows):
+        gate(f"ci.{n + 1}", row, "keel-release")
+    return emit()
+
+
 def buildParser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="keel",
@@ -446,6 +577,14 @@ def buildParser() -> argparse.ArgumentParser:
 
     doctor = sub.add_parser("doctor", help="只读检查挂载状态；有任何缺失或占用则退出码 1")
     doctor.set_defaults(handler=commandDoctor)
+    check = sub.add_parser("check", help="只读校验交付证据索引；不连接平台、不执行 CI 或合入")
+    check.add_argument("record", help="JSON 索引文件；相对证据路径以该文件所在目录为准")
+    check.add_argument("--issue", required=True, type=int, help="调用方从任务确认的 Issue 编号")
+    check.add_argument("--candidate", required=True, help="调用方取得的当前完整候选 SHA")
+    check.add_argument("--stories", required=True, help="任务验收编号，按顺序逗号分隔，如 S1,S2")
+    check.add_argument("--required-ci", action="append", default=[], help="调用方确认的必需 CI 名称，可重复；不传表示无必需项")
+    check.add_argument("--json", action="store_true", help="输出机器可读结果")
+    check.set_defaults(handler=commandCheck)
     return parser
 
 
