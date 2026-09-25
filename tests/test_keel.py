@@ -948,7 +948,18 @@ class KeelVerifyLookupTests(unittest.TestCase):
         )
         self.assertEqual(
             sorted(handbook["feature_files"]),
-            ["delivery-gate.md", "doctor.md", "install.md", "review.md", "start.md", "sync.md", "ticket.md", "uninstall.md", "verify-gates.md"],
+            [
+                "delivery-gate.md",
+                "doctor.md",
+                "install.md",
+                "release-health.md",
+                "review.md",
+                "start.md",
+                "sync.md",
+                "ticket.md",
+                "uninstall.md",
+                "verify-gates.md",
+            ],
         )
 
 
