@@ -982,6 +982,7 @@ class KeelVerifyLookupTests(unittest.TestCase):
             sorted(handbook["feature_files"]),
             [
                 "delivery-gate.md",
+                "design-contracts.md",
                 "doctor.md",
                 "install.md",
                 "release-health.md",
