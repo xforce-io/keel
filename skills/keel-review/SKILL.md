@@ -15,6 +15,8 @@ description: >
 1. `local-skill find code-review`，选精确匹配，完整读取返回的 `skill_file`，把该合同交给 Reviewer。找不到则 `BLOCKED`，不要用记忆或宿主口癖顶替。
 2. 冻结最新精确审查目标。只读 Reviewer 不能跑 Git 时，父代理必须在请求里提供完整 diff、相关文件、测试结果、验收/设计引用，以及 `keel-verify` 的证据路径（若该环节 `skip` 则写明原因）。缺证据是 `BLOCKED`，不是允许猜测，也不是让 Reviewer 去改或去拉。
 
+送审材料还须包含适用 L1/L2 的版本、产品确认来源、Issue S → L1.8 → 测试/驾驶证据映射；不适用项附依据。按 [设计合同](../keel-design/references/design-contract.md) 核对产品路径是否遗漏、L2 是否缩减产品承诺、必需子项是否全部有当前候选证据、是否为通过而事后降低标准。只有 S 汇总或 `keel check` PASS 不足以证明产品验收；缺必要材料为 BLOCKED，已发现契约违背按缺陷给出结论。
+
 审查模型按本次解析，缺一层走下一层，禁止发明。本 skill 不写死 slug：
 
 1. 本会话用户点名的 slug（且本宿主能跑）

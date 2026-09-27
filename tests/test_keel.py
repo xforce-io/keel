@@ -439,11 +439,12 @@ class WhenToAskContractTests(unittest.TestCase):
         self.assertIn("../keel/references/when-to-write.md", design)
         self.assertIn("先完整读取", design)
         self.assertIn("不以 AGENTS.md 的触发列表为准", design)
-        self.assertIn("章节结构、事实源、批准用语仍套用有效 `AGENTS.md`", design)
+        self.assertIn("references/design-contract.md", design)
+        self.assertIn("有效项目 AGENTS 的结构要求须显式映射", design)
         self.assertNotIn("必须写 L1", design)
         self.assertNotIn("套用有效 `AGENTS.md` 的 L1/L2 触发", design)
 
-    def test_dev_and_end_to_end_continue_after_writing_l1(self) -> None:
+    def test_dev_and_end_to_end_reuse_confirmed_product_baseline(self) -> None:
         router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
         start = router.index("- **dev**")
         chunk = router[start : router.index("\n", start)]
@@ -459,6 +460,13 @@ class WhenToAskContractTests(unittest.TestCase):
         dev = (ROOT / "skills" / "keel-dev" / "SKILL.md").read_text(encoding="utf-8")
         self.assertNotIn("没有人工批准", dev)
         self.assertNotIn("设计门禁", dev)
+        self.assertIn("L1.8", dev)
+        self.assertIn("产品基线", chunk)
+        self.assertNotIn("不检查人工批准，不等人", dev)
+        ask = (ROOT / "skills/keel/references/when-to-ask.md").read_text(encoding="utf-8")
+        self.assertIn("不因为文档刚生成就重复询问", ask)
+        self.assertIn("先写出具体可评审的 L1", ask)
+        self.assertIn("不额外等待一轮 L2 批准", ask)
         glossary = (ROOT / "docs" / "glossary.md").read_text(encoding="utf-8")
         self.assertRegex(
             glossary,
@@ -515,6 +523,31 @@ class WhenToAskContractTests(unittest.TestCase):
         self.assertNotIn("设计并停在人工批准", readme)
         router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("`cat-mode` 不启动 route", router)
+
+
+class ProductDesignContractTests(unittest.TestCase):
+    def test_product_and_technical_contracts_have_separate_responsibilities(self) -> None:
+        text = (ROOT / "skills/keel-design/references/design-contract.md").read_text(encoding="utf-8")
+        for section in ("4. Product Interaction Overview", "6. Stories 与完整交互", "7. 产品规则与边界", "8. 验收与效果验证"):
+            self.assertIn(section, text)
+        for requirement in ("S1.A1", "异常与禁止结果", "执行与依赖", "交付属性", "标准，不写本次执行", "不能先降低标准再报 pass"):
+            self.assertIn(requirement, text)
+        self.assertIn("product.md", text)
+        self.assertIn("technical.md", text)
+        self.assertIn("不自动发现漏验收", text)
+
+    def test_downstream_stages_consume_detailed_acceptance(self) -> None:
+        for stage in ("keel-dev", "keel-verify", "keel-review", "keel-release"):
+            text = (ROOT / "skills" / stage / "SKILL.md").read_text(encoding="utf-8")
+            with self.subTest(stage=stage):
+                self.assertIn("L1.8", text)
+                self.assertIn("design-contract.md", text)
+                self.assertIn("必需", text)
+        verify = (ROOT / "skills/keel-verify/SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("缺环境、缺人工判断、未执行不得记为 skip", verify)
+        self.assertIn("不能用 API 测试替代要求的图形操作", verify)
+        release = (ROOT / "skills/keel-release/SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("不能被 S 汇总 pass 掩盖", release)
 
 
 class CatModeContractTests(unittest.TestCase):
@@ -706,16 +739,15 @@ class KeelReviewContractTests(unittest.TestCase):
         self.assertIn("禁止以开 PR/MR 代替", route)
         self.assertIn("keel-verify", route)
 
-    def test_l2_test_plan_must_name_feature_file(self) -> None:
-        design = (ROOT / "skills" / "keel-design" / "SKILL.md").read_text(
-            encoding="utf-8"
-        )
-        self.assertIn("features/<file>.md", design)
-        self.assertIn("一一对应", design)
-        when = (
-            ROOT / "skills" / "keel" / "references" / "when-to-write.md"
-        ).read_text(encoding="utf-8")
-        self.assertIn("features/<file>.md", when)
+    def test_product_acceptance_maps_to_feature_files_even_without_l2(self) -> None:
+        design = (ROOT / "skills/keel-design/SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("references/design-contract.md", design)
+        contract = (ROOT / "skills/keel-design/references/design-contract.md").read_text(encoding="utf-8")
+        self.assertIn("features/<file>.md", contract)
+        self.assertIn("每个 S 指定一个主要功能文件", contract)
+        self.assertIn("L2 省略时，这一映射随 L1.8 提供", contract)
+        when = (ROOT / "skills/keel/references/when-to-write.md").read_text(encoding="utf-8")
+        self.assertIn("design-contract.md", when)
 
     def test_verify_maintain_is_not_a_delivery_stage(self) -> None:
         router = (ROOT / "skills" / "keel" / "SKILL.md").read_text(encoding="utf-8")
@@ -950,6 +982,7 @@ class KeelVerifyLookupTests(unittest.TestCase):
             sorted(handbook["feature_files"]),
             [
                 "delivery-gate.md",
+                "design-contracts.md",
                 "doctor.md",
                 "install.md",
                 "release-health.md",

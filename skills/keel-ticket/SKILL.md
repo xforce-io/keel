@@ -104,7 +104,7 @@ description: >
 
 ## 规则
 
-- Issue = 问题与验收；设计发 **comment**，人批后再 promote。名词表不进 issue body。
+- Issue = 问题与验收；L1 产品设计与 L2 技术设计按 keel-design 分别维护文档事实源，Issue/评论只放提案摘要、决定与链接。建票不写两份设计、不替用户批准；名词表不进 issue body。
 - 术语以仓库 `docs/glossary.md` 为准。缺失则先补规范名，禁止另造别称。
 - 不要粘贴大段对话；不要写入密钥或 token。
 - **永不默认 GitHub**；平台以当前 origin 为准，换仓库须重判。

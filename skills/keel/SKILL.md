@@ -25,9 +25,9 @@ description: >
 |---|---|---|
 | 1 | `keel-issue` | 定位仓库、Issue、验收与已完成阶段 |
 | 2 | `keel-how` | 讲清将改现有子系统怎么工作（带出处） |
-| 3 | `keel-design` | 若需 L1：写出提案并交回 |
+| 3 | `keel-design` | 按需完成 L1 产品设计与 L2 技术设计，交回 |
 | 4 | `keel-dev` | 实现已定位范围，填写 `S1…Sn` |
-| 5 | `keel-verify` | 按应用仓库 `.agents/skills/verify-*` 驾驶手册与功能地图证明 S1 |
+| 5 | `keel-verify` | 按应用仓库 `.agents/skills/verify-*` 驾驶手册与功能地图证明 S1…Sn 及适用 L1.8 |
 | 6 | `keel-review` | 独立审查；未 `PASS` 不得进入发布 |
 | 7 | `keel-release` | CI、PR/MR、合入；有 runbook 则部署与健康检查 |
 
@@ -48,8 +48,8 @@ description: >
 
 - **route** — 「处理 Issue N」：只执行下一合法环节一份，然后停。下一刀是设计或实现、且还没有对将改子系统的机制说明时，下一合法环节是 `keel-how`。实现已做、用户可见且尚未 `keel-verify` 完成表时，下一合法环节是 `keel-verify`，禁止以开 PR/MR 代替。
 - **design** — 「设计 Issue N」：`keel-how`（可按该环节 skip）→ `keel-design`，停在人工批准。
-- **dev** — 「开发 Issue N」：`keel-how`（可按该环节 skip）→ 若需 L1 且无提案则先 `keel-design`（写完继续，不等批）→ `keel-dev` → `keel-verify` → `keel-review`，停在可发布，不合入。用户可见票在 `keel-dev` 之后必须 `keel-verify`；缺完成表不得进入 `keel-review` / `keel-release`。
-- **end-to-end** — 「端到端完成」/「端到端改」：从下一合法环节执行到 `keel-release`；`keel-how` 在设计/实现前，`keel-verify` 在 `keel-review` 之前。用户要端到端但计划漏了 how/验证/审查/CI/合入时，计划不完整：补上或 `BLOCKED`。禁止默默丢掉。用户可见且无 verify 完成表时不得开 PR/MR。
+- **dev** — 「开发 Issue N」：`keel-how`（可按该环节 skip）→ 按需 `keel-design`（先满足产品基线，确认规则见 when-to-ask；已有依据不重复问）→ `keel-dev` → `keel-verify` → `keel-review`，停在可发布，不合入。用户可见票在 `keel-dev` 之后必须 `keel-verify`；缺完成表不得进入 `keel-review` / `keel-release`。
+- **end-to-end** — 「端到端完成」/「端到端改」：从下一合法环节执行到 `keel-release`；产品基线规则同 dev；`keel-how` 在设计/实现前，`keel-verify` 在 `keel-review` 之前。用户要端到端但计划漏了 how/验证/审查/CI/合入时，计划不完整：补上或 `BLOCKED`。禁止默默丢掉。用户可见且无 verify 完成表时不得开 PR/MR。
 
 「端到端完成」授权的是这条有范围的生命周期，不是绕过仓库策略、保护分支、审查硬条件、或未授权的合入/部署。`when-to-ask.md` 里未授权的项不得做，即使流程是 `end-to-end`。
 

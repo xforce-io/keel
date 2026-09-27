@@ -1,6 +1,6 @@
 # keel
 
-有门禁的研发交付：**keel 只路由**，环节是独立 skill。把单个任务从 Issue 推到设计、实现、独立审查、CI 与合入。何时问人见 [`when-to-ask.md`](skills/keel/references/when-to-ask.md)，何时写设计见 [`when-to-write.md`](skills/keel/references/when-to-write.md)。章节结构仍套用项目 `AGENTS.md`。
+有门禁的研发交付：**keel 只路由**，环节是独立 skill。把单个任务从 Issue 推到设计、实现、独立审查、CI 与合入。何时问人见 [`when-to-ask.md`](skills/keel/references/when-to-ask.md)，何时写设计见 [`when-to-write.md`](skills/keel/references/when-to-write.md)。L1 是产品设计，L2 是技术设计，不再各分概要与详细。
 
 它不是第二套 pstack，也不是常驻 mode。名词以 [docs/glossary.md](docs/glossary.md) 为准。
 
@@ -9,9 +9,9 @@
 | `keel` | 选模式、选下一合法环节、完整读取该环节 skill |
 | `keel-issue` | 定位仓库、Issue、验收 |
 | `keel-how` | 设计/实现前说明现有子系统怎么工作 |
-| `keel-design` | 写设计 |
+| `keel-design` | 按需写 L1 产品设计与 L2 技术设计 |
 | `keel-dev` | 实现与 `S1…Sn` 验收表 |
-| `keel-verify` | 按应用仓库 `.agents/skills/verify-*` 驾驶手册与功能地图证明 S1 |
+| `keel-verify` | 按应用仓库 `.agents/skills/verify-*` 驾驶手册与功能地图证明 S1…Sn 及适用 L1.8 验收 |
 | `keel-verify-maintain` | 保养功能地图（不在交付链上；全图/回归/维护循环时才跑） |
 | `keel-review` | 独立审查 |
 | `keel-release` | CI、PR/MR、合入；有 runbook 则部署 |
@@ -21,7 +21,15 @@
 | `cat-mode` | 风格（不在交付链上；你说了才跑；不启动 `/keel` 状态机） |
 | `keel-sync` | 把 Grok Bot 共享电脑上的 keel 技能更新到 `/workspace/keel`（不在交付链上；你说了才跑） |
 
-也可单独调用 `/keel-design` 等。问不问、写不写由 keel 的两份合同控制；`AGENTS.md` 管章节结构、Issue 骨架、分支与托管平台。
+也可单独调用 `/keel-design` 等。问不问、写不写由 keel 的两份合同控制；设计章节与验收规则见 [设计合同](skills/keel-design/references/design-contract.md)；项目 `AGENTS.md` 管本地路径/章节映射、Issue 骨架、分支与托管平台，旧的 L1=概要/L2=详细定义须明确迁移。
+
+## 两层设计
+
+L1 回答用户要完成什么、从哪里进入、如何操作、成功与失败各是什么；包含产品交互总览、完整 Stories、规则及第 8 节可执行验收。L2 引用确定的产品基线，说明架构、数据/状态、接口、运行保障与验证机制，不能自行缩减 L1。默认分别放在 `docs/design/{issue}-{slug}/product.md` 与 `technical.md`，Issue 只放摘要和链接。
+
+仍只有一个 `keel-design` 环节。产品行为有变化时先明确 L1 及适用确认，再做 L2 和实现；已有用户决定直接复用，不重复索取确认。简单交互改动可仅 L1；产品行为不变的内部技术改造可仅 L2；小修可复用已有契约。每份文档分别判断 write/reuse/skip，不为流程凑文档。
+
+Issue S 是交付汇总，L1.8 用稳定验收 ID 细化前置、真实入口、可判定结果、禁止结果与证据要求。开发、驾驶验证、独立审查和发布都对照同一基线；标准与执行结果分开记录。`keel check` v1 校验格式和文件摘要，尚不自动核对 L1.8 完整性。
 
 ## 安装
 
