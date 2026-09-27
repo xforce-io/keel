@@ -12,6 +12,8 @@ description: >
 
 用户可见票还须有 `keel-verify` 完成表（每个对上的功能 `pass|skip`、入口、证据路径）。只有 `keel-dev` 的 pytest / HTTP 验收表 → `BLOCKED`，不准开或合 PR/MR。无用户界面且 dev 表已写「无用户路径」的 `skip` 可以没有 Drive 证据。
 
+发布前核对适用 L1/L2 的固定版本、产品确认来源和 L1.8 全部必需子项：缺行、fail、blocked、not_run 或证据不足均阻断，不能被 S 汇总 pass 掩盖。确认规则引用 [何时问人](../keel/references/when-to-ask.md)，验收与基线规则引用 [设计合同](../keel-design/references/design-contract.md)。L1 不适用时核对 Issue 与沿用契约；后续效果观察单列报告。
+
 当前分支必须是 `feat/{issue}-*` 或 `bugfix/{issue}-*`，且 `{issue}` 等于本 Issue 号。默认分支或其它前缀（`chore/*`、`cursor/*`、`fix/*`、号对不上）→ `BLOCKED`。不改名、不改道 `keel-ticket`、不合入。
 
 合入前运行平台中立的 `keel check`（合同与示例见 [交付校验](references/check.md)）。调用方先从任务、当前候选和项目环境独立确认 Issue、完整 SHA、S1…Sn、必需 CI 清单，并核对原始证据真实性与合法 skip，不能从待检索引反向推导期望值。非零或执行不可用 → `BLOCKED`，按输出回对应环节；通过后候选或证据改变须重查。`PASS` 只说明本次输入符合校验合同，不代替独立审查或平台保护。keel 不负责采集平台 CI、配置 CI 或执行合入；实际操作继续使用项目已有方式。此工具不为缺失的人工批准补签。

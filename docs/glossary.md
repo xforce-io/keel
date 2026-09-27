@@ -7,7 +7,7 @@
 | keel-how | 环节 skill。在设计或实现前，带出处说明将改现有子系统怎么工作。 | pstack how、架构故事、keel-verify |
 | keel-design | 环节 skill。写出所需设计并交回路由。 | 自批设计、design.md |
 | keel-dev | 环节 skill。实现已定位范围并填写 `S1…Sn` 验收表。 | 写完就算、development.md |
-| keel-verify | 环节 skill。按当前应用仓库 `.agents/skills/verify-*` 的驾驶手册与功能地图，在真路径上证明本 Issue 的 S1。 | .cursor 验证、旧 .grok/skills/verify-* 手册、pstack verify、合入后健康检查 |
+| keel-verify | 环节 skill。按当前应用仓库 `.agents/skills/verify-*` 的驾驶手册与功能地图，在真路径上证明本 Issue 的 S1…Sn 及适用 L1.8 验收。 | .cursor 验证、旧 .grok/skills/verify-* 手册、pstack verify、合入后健康检查 |
 | 功能地图 | 应用仓库 `.agents/skills/verify-*/features/` 下按功能拆分的驾驶条目与 README 索引。用户可见 Story 必须对上其中一行。 | 证据文件、截图工厂、额外 E2E 层、pytest 验收表 |
 | keel-verify-maintain | 配套 skill。对照源码用户面保养功能地图，只改 `verify-*` 目录。不是交付环节。 | maintain-verification-skill、pstack 维护循环、keel-verify |
 | keel-review | 环节 skill。对最新精确目标做独立审查。 | 自己审自己、reviewers.md |
@@ -23,3 +23,7 @@
 | dev | keel 流程：写设计（若需）后实现到 review，停在可发布、不合入。 | — |
 | end-to-end | keel 流程：从下一合法环节执行到 `keel-release`。 | 本地跑起来、重启服务 |
 | 交付证据索引 | 按 Issue 关联当前候选版本与原始证据的机器可读文件，不是独立的批准来源。 | — |
+| L1 产品设计 | 定义用户目标、完整交互、产品规则及可执行验收的产品事实源。 | L1 概要设计 |
+| L2 技术设计 | 引用产品基线并定义架构、数据、接口、运行保障与验证机制的技术契约。 | L2 详细设计 |
+| L1.8 验收合同 | L1 第 8 节以稳定 ID 定义的逐项产品验收标准，执行结果另存。 | 测试运行报告 |
+| 产品基线 | 本次采用的产品范围、行为及验收标准的确定版本，记录适用的真实确认来源。 | — |

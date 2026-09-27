@@ -33,6 +33,8 @@ description: >
 4. 枚举 `/workspace/keel/skills/*/SKILL.md`（目录名 = skill 名）。
 5. 对每个 skill 用正式 skill write / `update_state` **更新同名** private skill（覆盖，不要再复制一份）：
    - `keel`：正文附上 `references/when-to-ask.md` 与 `references/when-to-write.md`
+   - `keel-design`：带上 `references/design-contract.md`，确保正文中的合同引用可读取
+   - `keel-release`：带上 `references/` 与 `examples/`，保留相对引用可达
    - `keel-verify`：带上目录内脚本（如 `lookup.py`）
    - `keel-reflect`：带上 `scripts/` 与 `references/`
    - `keel-sync`：从本文件更新自己
