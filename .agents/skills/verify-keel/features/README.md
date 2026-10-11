@@ -2,6 +2,7 @@
 
 | 文件 | 用户能看见什么 | 对上的验收 |
 |---|---|---|
+| [provided-environment.md](./provided-environment.md) | agent 利用已提供环境执行实际业务路径、保留受阻及恢复证据 | #27 S1–S3 |
 | [install.md](./install.md) | `keel install` 把 skill 与 CLI 挂到 `--home`；不写 `.agents/skills/` | 安装后 library + bin 可用 |
 | [ticket.md](./ticket.md) | install 后能 `find keel-ticket`；工作分支只许 `feat/*` / `bugfix/*` | #4 S1–S4 |
 | [start.md](./start.md) | install 后能 `find keel-start`；进仓只读、说清才删残留 | #6 S1–S4 |
