@@ -986,6 +986,7 @@ class KeelVerifyLookupTests(unittest.TestCase):
                 "doctor.md",
                 "install.md",
                 "release-health.md",
+                "reproduce-before-fix.md",
                 "review.md",
                 "start.md",
                 "sync.md",

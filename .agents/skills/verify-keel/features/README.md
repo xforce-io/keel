@@ -2,6 +2,7 @@
 
 | 文件 | 用户能看见什么 | 对上的验收 |
 |---|---|---|
+| [reproduce-before-fix.md](./reproduce-before-fix.md) | agent 先复现调查再定修复方案，修复后原路径对照 | #28 S1–S3 |
 | [install.md](./install.md) | `keel install` 把 skill 与 CLI 挂到 `--home`；不写 `.agents/skills/` | 安装后 library + bin 可用 |
 | [ticket.md](./ticket.md) | install 后能 `find keel-ticket`；工作分支只许 `feat/*` / `bugfix/*` | #4 S1–S4 |
 | [start.md](./start.md) | install 后能 `find keel-start`；进仓只读、说清才删残留 | #6 S1–S4 |

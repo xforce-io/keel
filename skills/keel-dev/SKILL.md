@@ -12,6 +12,8 @@ description: >
 
 不得在默认分支上实现本 Issue。工作分支必须是 `feat/{issue}-*` 或 `bugfix/{issue}-*`，且 `{issue}` 等于本 Issue 号，否则 `BLOCKED`。
 
+修复任务先核对 `keel-how` 的问题证据及方案依据；无须设计文档也不能省略。缺依据回 how，不能在修改后补造修改前记录。实现后保留原入口、输入、环境和版本信息交给 verify 对照；临时诊断或实验修改须清理或明确纳入经过验证的修复范围。
+
 先读 [设计与验收合同](../keel-design/references/design-contract.md)。Issue S 是汇总，适用的 L1.8 验收项是具体实现与验证目标；L1 不适用时使用已有契约与 Issue 验收，不制造 A 编号。实现与验收标准可追踪。开发中跑聚焦检查，送审前跑项目要求的套件。优先用项目已有工具（具名 pytest、套件脚本、进程内 HTTP 客户端）。不要发明仓库外的截图工厂或临时 E2E 层。
 
 **功能地图不是「额外证据文件」。** 用户能摸到的界面（Web / CLI / TUI / 桌面 / 主 API 路径）：在宣称本环节完成前，对照应用仓库 `.agents/skills/verify-*/features/README.md` 与功能文件。每条用户可见 `S1…Sn` 指定一个主要功能文件（文件名或 README 条目），其中列全 L1.8 子项及必要的跨功能路径。对不上 → `BLOCKED`：在同一 `features/` 下新增或更新文件并改 README 一行，然后才能填验收表结束本环节。不要把 pytest 表当作地图已覆盖。明确无用户界面、且 `S1` 已是可跑命令 → 功能地图/Drive 记 `skip`，写明「无用户路径」；S 本身仍须执行适用验收。查找手册规则与 `keel-verify` 相同（`.agents` 下 `verify-*`，不读 `.cursor`，不认旧 `.grok/skills`）。
