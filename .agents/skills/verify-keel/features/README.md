@@ -2,7 +2,6 @@
 
 | 文件 | 用户能看见什么 | 对上的验收 |
 |---|---|---|
-| [reproduce-before-fix.md](./reproduce-before-fix.md) | agent 先复现调查再定修复方案，修复后原路径对照 | #28 S1–S3 |
 | [install.md](./install.md) | `keel install` 把 skill 与 CLI 挂到 `--home`；不写 `.agents/skills/` | 安装后 library + bin 可用 |
 | [ticket.md](./ticket.md) | install 后能 `find keel-ticket`；工作分支只许 `feat/*` / `bugfix/*` | #4 S1–S4 |
 | [start.md](./start.md) | install 后能 `find keel-start`；进仓只读、说清才删残留 | #6 S1–S4 |
@@ -17,5 +16,6 @@
 | [release-health.md](./release-health.md) | 发布后即时健康判定与本次 release 的结束边界 | #22 S1–S3 |
 
 | [design-contracts.md](./design-contracts.md) | 两层设计、逐项验收、迁移与已安装合同引用 | #24 S1–S3 |
+| [reproduce-before-fix.md](./reproduce-before-fix.md) | agent 先复现调查再定修复方案，修复后原路径对照 | #28 S1–S3 |
 
 未列入的 `/keel` 会话路由、各环节 skill 正文：本 Issue 不对则不要 Drive。新增用户可见 CLI 入口时在此加一行并补功能文件；验收 Story 对不上任何一行即 BLOCKED。
