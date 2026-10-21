@@ -104,8 +104,12 @@ keel check /path/to/delivery.json --issue 20 --candidate "$candidate_sha" \
 
 退出码 0 表示输入通过，1 表示阻断，命令行语法错误为 2。是否接入 CI 由项目决定；release 环节在实际合入前调用校验。证据来源真实性、当前候选和必需项清单由调用方确认。
 
+## 修复后的复验准备
+
+`keel reverify` 在昂贵验收前核对复验范围、当前依赖与原始依据、前置检查、累计成本及三轮追加授权。只读返回 READY/BLOCKED，不执行计划或签发产品 PASS，不代替 `keel check`。完整参数、计量边界及可运行样例见 [复验准备合同](skills/keel-verify/references/reverification.md)。开发期先用确定性检查收敛，最终仍完成适用的真实路径和完整独立审查。
+
 ## 开发
 
 ```bash
-python3 -m unittest tests.test_keel tests.test_keel_reflect_inspect tests.test_keel_check
+python3 -m unittest tests.test_keel tests.test_keel_reflect_inspect tests.test_keel_check tests.test_keel_reverify
 ```

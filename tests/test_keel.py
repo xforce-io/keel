@@ -988,6 +988,7 @@ class KeelVerifyLookupTests(unittest.TestCase):
                 "provided-environment.md",
                 "release-health.md",
                 "reproduce-before-fix.md",
+                "reverification.md",
                 "review.md",
                 "start.md",
                 "sync.md",

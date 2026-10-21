@@ -5,7 +5,7 @@ description: Use when keel-verify must drive the keel CLI on a real user path (i
 
 # verify-keel
 
-驾驶 **keel CLI**（`bin/keel`：install / doctor / uninstall / check）。Issue 验收对 `features/`；只 Drive 对上的功能文件。
+驾驶 **keel CLI**（`bin/keel`：install / doctor / uninstall / check / reverify）。Issue 验收对 `features/`；只 Drive 对上的功能文件。
 
 本仓库是插件仓，也是这份手册所在的应用仓。`install` 挂的是 `skills/keel*`，**不**写入应用仓库的 `.agents/skills/verify-*`。
 
