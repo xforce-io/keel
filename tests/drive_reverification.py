@@ -24,7 +24,7 @@ def main():
         (output / (name + '.stderr')).write_text(r.stderr)
         assert r.returncode == expected, (name, r.returncode, r.stdout, r.stderr)
         records.append({'name': name, 'argv': command, 'exit': r.returncode})
-        return json.loads(r.stdout) if '--json' in args else r.stdout
+        return json.loads(r.stdout, parse_constant=lambda v: (_ for _ in ()).throw(AssertionError(v))) if '--json' in args else r.stdout
     def plan(name, data, expected=0, extra=(), previous=False, cli=CLI, home=None, json_output=True):
         file = root / (name + '.json'); file.write_text(json.dumps(data))
         args = ['reverify', str(file), '--task', 'example-31', '--candidate', B, '--baseline', A,
@@ -45,7 +45,8 @@ def main():
     for row in deleted['items']:
         row['decision'] = 'rerun'
         for dep in row['dependencies']: dep['after'] = None
-    plan('missing-root-is-not-deletion', deleted, 1, extra=['--root', str(root / 'missing')])
+    blocked = plan('missing-root-is-not-deletion', deleted, 1, extra=['--root', str(root / 'missing')])
+    assert blocked['budget'] == good['budget'] and blocked['cumulative'] == good['cumulative']
     invalid_previous = copy.deepcopy(base); invalid_previous.pop('schema_version')
     (root / 'plan.json').write_text(json.dumps(invalid_previous))
     plan('previous-version-required', base, 1, previous=True)
@@ -66,9 +67,18 @@ def main():
         for row in d['prechecks']:
             row.update(status='pass' if checks[row['id']] else 'fail', evidence=proof)
         plan('precheck-' + failed, d, 1)
+    # Damaged links are existing entries, never deleted files. Valid internal links remain usable.
+    original = (root / 'algorithm.txt').read_bytes()
+    (root / 'algorithm.txt').unlink(); (root / 'algorithm.txt').symlink_to('missing-target')
+    d = copy.deepcopy(base); d['items'][1]['decision'] = 'rerun'; d['items'][1]['dependencies'][0]['after'] = None
+    plan('dangling-link-not-deletion', d, 1)
+    (root / 'algorithm.txt').unlink(); (root / 'algorithm.txt').symlink_to('old.txt')
+    d['items'][1]['dependencies'][0]['after'] = hashlib.sha256((root / 'old.txt').read_bytes()).hexdigest()
+    plan('valid-internal-link', d)
+    (root / 'algorithm.txt').unlink(); (root / 'algorithm.txt').write_bytes(original)
     metrics = copy.deepcopy(base['budget']['planned']); metrics.update(cli_calls=2, atomic_reads=5, upstream_requests=8)
     def continuation(n):
-        d = copy.deepcopy(base); d['history'] = [{'id': str(i), 'candidate_sha': A, 'kind': 'review', 'verdict': 'CHANGES_REQUESTED', 'failure_classes': ['contract'], 'metrics': metrics} for i in range(n)]
+        d = copy.deepcopy(base); d['history'] = [{'id': str(i), 'candidate_sha': A, 'kind': 'review', 'verdict': 'CHANGES_REQUESTED', 'failure_classes': ['contract'], 'metrics': copy.deepcopy(metrics)} for i in range(n)]
         d['retry'] = {'root_cause': 'contract gap', 'strategy_change': 'test all consumers first', 'exit_condition': 'one additional round'}
         return d
     d = continuation(1); r = plan('resume-metering-unknown', d, previous=True)
@@ -76,10 +86,29 @@ def main():
     d['budget']['limits']['model_calls'] = 1; boundary = plan('budget-boundary', d, 1, previous=True)
     assert boundary['budget']['limits']['model_calls'] == 1 and boundary['budget']['projected']['model_calls'] == 2
     d = continuation(1); d['budget']['limits']['input_tokens'] = 100; plan('unknown-token-limit', d, 1, previous=True)
+    for count in (1, 2):
+        overflow = continuation(count)
+        for row in overflow['history']: row['metrics']['elapsed_seconds'] = 1e308
+        overflow['budget']['planned']['elapsed_seconds'] = 1e308
+        overflow['budget']['limits']['elapsed_seconds'] = 1e308
+        result = plan('finite-sum-overflow-' + str(count), overflow, 1, previous=True)
+        assert result['budget']['projected']['elapsed_seconds'] is None
+    bad = continuation(1); bad['prechecks'][0]['status'] = 'fail'
+    result = plan('failed-precheck-keeps-costs', bad, 1, previous=True)
+    assert result['budget']['projected']['model_calls'] == 2 and result['cumulative']['model_calls'] == 1
     d = continuation(3); plan('three-rounds', d, 1, previous=True)
     evidence = {'path': 'approval.txt', 'sha256': hashlib.sha256((root / 'approval.txt').read_bytes()).hexdigest()}
     d['extensions'] = [{'after_round': 3, 'additional_reviews': 1, 'actor': 'synthetic-user', 'evidence': evidence}]
     plan('one-more-round', d, previous=True)
+    for folder in ('prior-location', 'next-location'):
+        previous_dir = root / folder; previous_dir.mkdir()
+        (previous_dir / 'previous.json').write_text(json.dumps(d))
+        (previous_dir / 'approval.txt').write_bytes((root / 'approval.txt').read_bytes())
+        plan('cross-directory-' + folder, d, previous=True,
+             extra=['--previous', str(previous_dir / 'previous.json')])
+    (previous_dir / 'approval.txt').unlink()
+    plan('current-proof-cannot-replace-old', d, 1, previous=True,
+         extra=['--previous', str(previous_dir / 'previous.json')])
     (root / 'plan.json').write_text(json.dumps(d))
     d['history'] += [continuation(4)['history'][-1]]; plan('fourth-exhausted', d, 1, previous=True)
     inflated = copy.deepcopy(d); inflated['extensions'][0]['additional_reviews'] = 2

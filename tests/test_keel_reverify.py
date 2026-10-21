@@ -220,6 +220,79 @@ class ReverifyTests(unittest.TestCase):
         self.assertEqual(b['projected']['model_calls'], 2); self.assertEqual(b['limits']['model_calls'], 1)
         r = self.run_plan(json_output=False); self.assertIn('budget:', r.stdout); self.assertIn('projected', r.stdout)
 
+    def test_dangling_links_are_not_deletion_and_internal_regular_links_work(self):
+        target = self.root / 'algorithm.txt'
+        original = target.read_text(); target.unlink(); target.symlink_to('absent')
+        d = copy.deepcopy(self.data); d['items'][1]['decision'] = 'rerun'
+        d['items'][1]['dependencies'][0]['after'] = None
+        self.blocked(d)
+        target.unlink(); target.symlink_to('old.txt')
+        d['items'][1]['dependencies'][0]['after'] = self.sha('old.txt')
+        self.assertEqual(self.run_plan(d).returncode, 0)
+        target.unlink(); target.symlink_to(self.root.parent / 'outside')
+        self.blocked(d)
+        target.unlink(); (self.root / 'broken-parent').symlink_to('absent-dir')
+        d['items'][1]['dependencies'][0].update(path='broken-parent/file', after=None)
+        self.blocked(d)
+        target.write_text(original)
+
+    def test_blocked_business_checks_keep_valid_cost_context(self):
+        d = copy.deepcopy(self.data); d['history'] = self.history(); self.retry(d)
+        for change in ('root', 'dependency', 'precheck'):
+            value = copy.deepcopy(d); extra = ()
+            if change == 'root': extra = ['--root', str(self.root / 'missing')]
+            elif change == 'dependency': value['items'][0]['dependencies'][0]['after'] = '1' * 64
+            else: value['prechecks'][0]['status'] = 'fail'
+            r = self.blocked(value, previous=True, extra=extra)
+            self.assertEqual(r['cumulative']['model_calls'], 1)
+            self.assertEqual(r['budget']['limits']['elapsed_seconds'], 600)
+            self.assertEqual(r['budget']['planned']['model_calls'], 1)
+            self.assertEqual(r['budget']['projected']['model_calls'], 2)
+
+    def test_overflow_is_blocked_strict_json_and_never_free(self):
+        for count in (1, 2):
+            d = copy.deepcopy(self.data); d['history'] = self.history(count); self.retry(d)
+            for row in d['history']: row['metrics']['elapsed_seconds'] = 1e308
+            d['budget']['planned']['elapsed_seconds'] = 1e308
+            d['budget']['limits']['elapsed_seconds'] = 1e308
+            r = self.blocked(d, previous=True)
+            json.dumps(r, allow_nan=False)
+            self.assertIsNone(r['budget']['projected']['elapsed_seconds'])
+            if count == 2: self.assertIsNone(r['cumulative']['elapsed_seconds'])
+            self.assertIn('overflow', str(r['checks']))
+        d['history'][0]['metrics']['elapsed_seconds'] = 10 ** 400
+        self.blocked(d, previous=True)  # Mixing a huge integer with a float also overflows.
+        d = copy.deepcopy(self.data); d['budget']['limits']['elapsed_seconds'] = 1e308
+        run = self.run_plan(d); file = self.root / 'plan.json'
+        file.write_text(file.read_text().replace('1e+308', '1e999'))
+        run = subprocess.run(run.args, capture_output=True, text=True, cwd=self.root)
+        self.assertEqual(run.returncode, 1, run.stderr)
+        json.loads(run.stdout, parse_constant=lambda v: self.fail(v))
+
+    def test_inherited_extension_uses_previous_directory_not_current_shadow(self):
+        previous = copy.deepcopy(self.data); previous['history'] = self.history(3); self.retry(previous)
+        previous['extensions'] = [{'after_round': 3, 'additional_reviews': 1, 'actor': 'user',
+                                   'evidence': self.evidence('approval.txt')}]
+        old_dir = self.root / 'original'; old_dir.mkdir()
+        (old_dir / 'approval.txt').write_text('approval.txt')
+        self.previous = old_dir / 'previous.json'; self.write(self.previous, previous)
+        (self.root / 'approval.txt').write_text('different current-directory shadow')
+        self.assertEqual(self.run_plan(previous, previous=True).returncode, 0)
+        (old_dir / 'approval.txt').unlink()
+        (self.root / 'approval.txt').write_text('approval.txt')
+        self.blocked(previous, previous=True)  # Current shadow must not replace missing old proof.
+        # Multiple moves: preserve the prior record and its proof together at every hop.
+        next_dir = self.root / 'second'; next_dir.mkdir()
+        (next_dir / 'approval.txt').write_text('approval.txt')
+        self.previous = next_dir / 'previous.json'; self.write(self.previous, previous)
+        self.assertEqual(self.run_plan(previous, previous=True).returncode, 0)
+        # Newly appended authorization resolves in the current directory.
+        current = copy.deepcopy(previous); current['history'] = self.history(4)
+        (self.root / 'new-proof.txt').write_text('new round approval')
+        current['extensions'].append({'after_round': 4, 'additional_reviews': 1, 'actor': 'user',
+                                      'evidence': self.evidence('new-proof.txt')})
+        self.assertEqual(self.run_plan(current, previous=True).returncode, 0)
+
     def test_minimal_semantic_failure_examples(self):
         # Generic contract failures; these are not hospital data or an Agent eval.
         for streams, degree, adopted, resources in [(['hourly'], 'full', True, ['core', 'decoder']),
