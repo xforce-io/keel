@@ -570,6 +570,12 @@ def commandCheck(args: argparse.Namespace) -> int:
     return emit()
 
 
+def commandReverify(args: argparse.Namespace) -> int:
+    import runpy
+    module = repoRoot(State.load(homeDir(args.home))) / "skills/keel-verify/scripts/reverify.py"
+    return runpy.run_path(str(module))["command"](args)
+
+
 def buildParser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="keel",
@@ -598,6 +604,21 @@ def buildParser() -> argparse.ArgumentParser:
     check.add_argument("--required-ci", action="append", default=[], help="调用方确认的必需 CI 名称，可重复；不传表示无必需项")
     check.add_argument("--json", action="store_true", help="输出机器可读结果")
     check.set_defaults(handler=commandCheck)
+    reverify = sub.add_parser("reverify", help="只读核对增量复验计划、前置检查、累计成本与审查轮次；不执行计划")
+    reverify.add_argument("record", help="复验计划 JSON；证据路径相对此文件")
+    reverify.add_argument("--task", required=True, help="从原任务取得的稳定标识，换候选不换任务")
+    reverify.add_argument("--candidate", required=True, help="当前完整候选 SHA")
+    reverify.add_argument("--baseline", required=True, help="原始证据所依据的完整候选 SHA")
+    reverify.add_argument("--items", required=True, help="从验收合同独立取得的项目编号，逗号分隔")
+    reverify.add_argument("--prechecks", required=True, help="本轮确定性前置检查编号，逗号分隔")
+    reverify.add_argument("--root", default=".", help="依赖文件所在项目目录，默认当前目录")
+    reverify.add_argument("--changed-path", action="append", default=[], help="从实际变更独立取得的路径，可重复")
+    reverify.add_argument("--require-agent", action="append", default=[], help="合同明确要求本候选 Agent 实跑的项目，可重复")
+    history = reverify.add_mutually_exclusive_group(required=True)
+    history.add_argument("--initial", action="store_true", help="仅用于此前无记录的任务，history 必须为空")
+    history.add_argument("--previous", help="同一任务上一份原始计划；历史只能追加，预算增加须有授权依据")
+    reverify.add_argument("--json", action="store_true", help="输出 READY / BLOCKED 和逐项计划；READY 不是验收 PASS")
+    reverify.set_defaults(handler=commandReverify)
     return parser
 
 
