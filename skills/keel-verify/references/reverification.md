@@ -2,19 +2,19 @@
 
 `keel reverify RECORD --task TASK --candidate SHA --baseline SHA --items IDS --prechecks IDS --root DIR (--initial | --previous FILE) [--changed-path PATH] [--require-agent ID] [--json]`
 
-目的：在昂贵运行前核对声明、可读文件和累计预算。返回 READY/0 或 BLOCKED/1，语法错误 2；READY 不代表执行、产品验收、审查或发布 PASS。输入只读，不运行其中的命令、不调用模型、不连接平台。完整可运行样例在 `../examples/reverify/`，不得把合成样例作为真实交付证据。
+目的：在昂贵运行前核对声明、可读文件和累计预算。返回 READY/0 或 BLOCKED/1，语法错误 2；READY 不代表执行、产品验收、审查或发布 PASS。报告的 budget 同时列出 limits、planned、projected（累计实际值+预计值）；不可计算项为 null，不能伪造零值。输入只读，不运行其中的命令、不调用模型、不连接平台。完整可运行样例在 `../examples/reverify/`，不得把合成样例作为真实交付证据。
 
 ## 调用方责任
 
 task、候选、baseline、必需验收项、前置检查和 changed-path 从原任务/产品基线/Git 变更独立取得，不能从待检计划反推；依赖列表要包含真正影响本项的代码、配置、输入、Skill 和共享模块。`--require-agent` 逐条列出产品基线要求本候选真实 Agent 实跑的项目。语义完整性由调用方及完整独立审查核对，工具不能发现所有漏报依赖，也不认证作者和授权身份。
 
-已有记录必须提供原始上一份 `--previous`，不能复制改写历史后再冒充 previous。首次使用 --initial 且 history 为空；工具不能识别用户刻意隐瞒的其他任务记录。任务标识、文件名和 SHA 不是认证来源；不允许靠换目录/新 SHA/改 task_id 清零。previous 路径相对于当前工作目录，其内部证据在后续记录中仍相对于各自 record 所在目录，移动记录时须保留原证据可核对位置。
+已有记录必须提供原始上一份 `--previous`，不能复制改写历史后再冒充 previous。首次使用 --initial 且 history 为空；工具不能识别用户刻意隐瞒的其他任务记录。任务标识、文件名和 SHA 不是认证来源；不允许靠换目录/新 SHA/改 task_id 清零。previous 同样要求 schema_version=1 和完整候选/基线身份；不接受未版本化或损坏的历史基线。previous 路径相对于当前工作目录，其内部证据在后续记录中仍相对于各自 record 所在目录，移动记录时须保留原证据可核对位置。
 
 ## JSON 字段
 
 - `schema_version: 1`；`task_id`、`candidate_sha`、`baseline_sha` 必须与参数一致，SHA 为完整40/64位小写十六进制；拒绝重复键、非法非有限数字、非对象或超过1 MiB记录。
 - `items`：按 --items 顺序每项一条；`id`、`method: deterministic|user-path|agent`、`decision: rerun|retain`、非空 `reason`、非空 `dependencies`。
-- 每个 dependency：`path` 为 --root 下的相对文件名，禁止 `..`/绝对路径/跳出 root；`before`/`after` 为原/当前 SHA-256 或 null（新增/删除），两者不能都空。当前实际文件摘要须等于 after；retain 的 before 应为该原始证据所依赖的版本摘要，不强迫历史依据改成最近一次候选。同一项目依赖名不重复。
+- 每个 dependency：`path` 为 --root 下的相对文件名，禁止 `..`/绝对路径/跳出 root；--root 必须为现存目录；仅目录内单个文件缺失可解释为删除，权限错误或非普通文件不能当删除。`before`/`after` 为原/当前 SHA-256 或 null（新增/删除），两者不能都空。当前实际文件摘要须等于 after；retain 的 before 应为该原始证据所依赖的版本摘要，不强迫历史依据改成最近一次候选。同一项目依赖名不重复。
 - `old_evidence` 可选，含原始运行的完整 `candidate_sha`（可早于 baseline，不得改写成当前版本）及 `evidence: {path,sha256}`；引用文件须可读且摘要一致。retain 只在所有依赖一致、有原始证据且非 --require-agent 时允许；原始证据不变 SHA，输出 executed=false。agent 无影响且已有依据、无显式必需要求时不能无理由 rerun；有影响/无原依据/明确必需要求则安排 rerun。其他方法可重跑低成本检查及当前用户路径。
 - 每个 --changed-path 须被某项依赖覆盖，或在 `out_of_scope: {path: reason}` 逐项说明无关理由，两者不重叠。该声明仍须审查，不是自动语义分析。
 - `prechecks` 与 --prechecks 编号、顺序一致；每项 `{id,status:"pass",candidate_sha,evidence}`，且为当前候选。调用方实际执行已确认的生产者/消费者、状态与资源等确定性检查，失败先修，不能伪造 pass；工具仅核对声明及原始输出摘要，不重执行测试。

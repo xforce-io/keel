@@ -189,6 +189,37 @@ class ReverifyTests(unittest.TestCase):
         d = copy.deepcopy(self.data); d['items'][0]['dependencies'][0]['path'] = '../outside'
         self.blocked(d)
 
+    def test_missing_root_is_not_a_valid_deletion_plan(self):
+        d = copy.deepcopy(self.data)
+        for row in d['items']:
+            row['decision'] = 'rerun'
+            for dep in row['dependencies']: dep['after'] = None
+        self.blocked(d, extra=['--root', str(self.root / 'typo')])
+        self.blocked(d, extra=['--root', str(self.root / 'ui.txt')])
+        (self.root / 'algorithm.txt').unlink()
+        d = copy.deepcopy(self.data); d['items'][1]['decision'] = 'rerun'; d['items'][1]['dependencies'][0]['after'] = None
+        self.assertEqual(self.run_plan(d).returncode, 0)
+        (self.root / 'algorithm.txt').mkdir()
+        self.blocked(d)
+
+    def test_previous_requires_versioned_identity(self):
+        for key, value in [('schema_version', None), ('schema_version', 2), ('schema_version', True), ('candidate_sha', None), ('baseline_sha', 'short')]:
+            previous = copy.deepcopy(self.data)
+            if value is None: previous.pop(key)
+            else: previous[key] = value
+            self.write(self.previous, previous)
+            self.blocked(previous=True)
+
+    def test_budget_report_shows_actual_limit_planned_and_projection(self):
+        r = self.run_plan(); b = json.loads(r.stdout)['budget']
+        self.assertEqual(b['limits']['model_calls'], 5); self.assertEqual(b['planned']['model_calls'], 1)
+        self.assertEqual(b['projected']['model_calls'], 1)
+        d = copy.deepcopy(self.data); d['history'] = self.history(1); self.retry(d)
+        d['budget']['limits']['model_calls'] = 1
+        b = self.blocked(d, previous=True)['budget']
+        self.assertEqual(b['projected']['model_calls'], 2); self.assertEqual(b['limits']['model_calls'], 1)
+        r = self.run_plan(json_output=False); self.assertIn('budget:', r.stdout); self.assertIn('projected', r.stdout)
+
     def test_minimal_semantic_failure_examples(self):
         # Generic contract failures; these are not hospital data or an Agent eval.
         for streams, degree, adopted, resources in [(['hourly'], 'full', True, ['core', 'decoder']),

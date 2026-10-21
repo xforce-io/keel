@@ -40,6 +40,16 @@ def main():
     good = plan('presentation-resource-unchanged-analysis', base)
     assert good['actions'][1]['decision'] == 'retain'
     plan('text', base, json_output=False)
+    assert good['budget']['limits']['model_calls'] == 5 and good['budget']['projected']['model_calls'] == 1
+    deleted = copy.deepcopy(base)
+    for row in deleted['items']:
+        row['decision'] = 'rerun'
+        for dep in row['dependencies']: dep['after'] = None
+    plan('missing-root-is-not-deletion', deleted, 1, extra=['--root', str(root / 'missing')])
+    invalid_previous = copy.deepcopy(base); invalid_previous.pop('schema_version')
+    (root / 'plan.json').write_text(json.dumps(invalid_previous))
+    plan('previous-version-required', base, 1, previous=True)
+    (root / 'plan.json').write_text(json.dumps(base))
     d = copy.deepcopy(base); d['items'][1]['dependencies'][0]['before'] = '0' * 64; d['items'][1]['decision'] = 'rerun'
     plan('algorithm-changed', d)
     d = copy.deepcopy(base); d['items'][1]['decision'] = 'rerun'; plan('redundant-agent', d, 1)
@@ -63,7 +73,8 @@ def main():
         return d
     d = continuation(1); r = plan('resume-metering-unknown', d, previous=True)
     assert r['cumulative']['input_tokens'] is None and r['cumulative']['upstream_requests'] == 8
-    d['budget']['limits']['model_calls'] = 1; plan('budget-boundary', d, 1, previous=True)
+    d['budget']['limits']['model_calls'] = 1; boundary = plan('budget-boundary', d, 1, previous=True)
+    assert boundary['budget']['limits']['model_calls'] == 1 and boundary['budget']['projected']['model_calls'] == 2
     d = continuation(1); d['budget']['limits']['input_tokens'] = 100; plan('unknown-token-limit', d, 1, previous=True)
     d = continuation(3); plan('three-rounds', d, 1, previous=True)
     evidence = {'path': 'approval.txt', 'sha256': hashlib.sha256((root / 'approval.txt').read_bytes()).hexdigest()}

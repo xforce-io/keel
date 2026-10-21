@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 import re
+import stat
 from pathlib import Path
 
 SHA = re.compile(r"(?:[0-9a-f]{40}|[0-9a-f]{64})\Z")
@@ -80,6 +81,9 @@ def command(args):
     actions = []
     totals = {}
     checks = []
+    limits = None
+    planned = None
+    projected = None
     def evidence(value, field):
         value = obj(value, field)
         require(text(value.get("path")) and isinstance(value.get("sha256"), str)
@@ -105,6 +109,9 @@ def command(args):
         history = array(data.get("history"), "history")
         if args.previous:
             previous = load(Path(args.previous).expanduser().resolve())
+            require(type(previous.get("schema_version")) is int and previous["schema_version"] == 1, "previous.schema_version")
+            for key in ("candidate_sha", "baseline_sha"):
+                require(isinstance(previous.get(key), str) and SHA.fullmatch(previous[key]), "previous." + key)
             require(previous.get("task_id") == args.task, "previous.task_id")
             old_history = array(previous.get("history"), "previous.history")
             require(history[:len(old_history)] == old_history, "history.append-only")
@@ -120,6 +127,7 @@ def command(args):
         else:
             require(not history, "initial plan must have empty history; use --previous")
         root = Path(args.root).expanduser().resolve()
+        require(root.is_dir(), "root.directory")
         rows = array(data.get("items"), "items")
         require([obj(r, "item").get("id") for r in rows] == expected, "items.expected")
         covered = set()
@@ -142,7 +150,14 @@ def command(args):
                 for k in ("before", "after"):
                     require(dep.get(k) is None or isinstance(dep[k], str) and DIGEST.fullmatch(dep[k]), key + "." + k)
                 require(dep.get("before") is not None or dep.get("after") is not None, key + ".dependency.absent")
-                require((digest(f) if f.is_file() else None) == dep.get("after"), key + ".dependency.current")
+                try:
+                    info = f.stat()
+                except FileNotFoundError:
+                    actual = None
+                else:
+                    require(stat.S_ISREG(info.st_mode), key + ".dependency.file")
+                    actual = digest(f)
+                require(actual == dep.get("after"), key + ".dependency.current")
                 changed |= dep.get("before") != dep.get("after")
             decision = row.get("decision")
             require(decision in ("rerun", "retain"), key + ".decision")
@@ -212,14 +227,17 @@ def command(args):
         require(planned["elapsed_seconds"] > 0, "budget.planned.elapsed_seconds")
         for k, limit in limits.items():
             number(limit, "budget.limits." + k)
-            require(totals[k] is not None and planned[k] is not None, "budget.unknown." + k)
-            require(totals[k] + planned[k] <= limit, "budget.exceeded." + k)
+        projected = {k: None if totals[k] is None or planned[k] is None else totals[k] + planned[k] for k in METRICS}
+        for k, limit in limits.items():
+            require(projected[k] is not None, "budget.unknown." + k)
+            require(projected[k] <= limit, "budget.exceeded." + k)
         checks.append({"status": "pass", "field": "plan", "reason": "声明与可读文件核对完成；不证明语义正确或已执行"})
     except (OSError, ValueError, TypeError, RuntimeError, KeyError) as exc:
         checks.append({"status": "fail", "field": str(exc), "reason": "修正声明或原始依据；不得以旧证据改版本或未知计量补零"})
     ready = all(c["status"] == "pass" for c in checks)
     report = {"schema_version": 1, "status": "READY" if ready else "BLOCKED", "task_id": args.task,
-              "candidate_sha": args.candidate, "actions": actions, "cumulative": totals, "checks": checks,
+              "candidate_sha": args.candidate, "actions": actions, "cumulative": totals,
+              "budget": {"limits": limits, "planned": planned, "projected": projected}, "checks": checks,
               "scope": "只读复验准备检查；不执行计划、不认证影响判断/授权来源、不签产品验收或发布 PASS"}
     if args.json:
         print(json.dumps(report, ensure_ascii=False, indent=2))
@@ -228,6 +246,7 @@ def command(args):
         for a in actions:
             print(f'{a["id"]}: {a["decision"]} ({a["method"]}) — {a["reason"]}')
         print("cumulative: " + json.dumps(totals, ensure_ascii=False))
+        print("budget: " + json.dumps(report["budget"], ensure_ascii=False))
         for c in checks:
             print(f'{c["status"]}: {c["field"]} — {c["reason"]}')
         print(report["scope"])
