@@ -18,10 +18,10 @@ task、候选、baseline、必需验收项、前置检查和 changed-path 从原
 - `old_evidence` 可选，含原始运行的完整 `candidate_sha`（可早于 baseline，不得改写成当前版本）及 `evidence: {path,sha256}`；引用文件须可读且摘要一致。retain 只在所有依赖一致、有原始证据且非 --require-agent 时允许；原始证据不变 SHA，输出 executed=false。agent 无影响且已有依据、无显式必需要求时不能无理由 rerun；有影响/无原依据/明确必需要求则安排 rerun。其他方法可重跑低成本检查及当前用户路径。
 - 每个 --changed-path 须被某项依赖覆盖，或在 `out_of_scope: {path: reason}` 逐项说明无关理由，两者不重叠。该声明仍须审查，不是自动语义分析。
 - `prechecks` 与 --prechecks 编号、顺序一致；每项 `{id,status:"pass",candidate_sha,evidence}`，且为当前候选。调用方实际执行已确认的生产者/消费者、状态与资源等确定性检查，失败先修，不能伪造 pass；工具仅核对声明及原始输出摘要，不重执行测试。
-- `history` 为按发生顺序的运行记录；每条唯一 `id`、完整 `candidate_sha`、`kind: check|cli|agent|review`、`metrics`；review 另含 `verdict: PASS|CHANGES_REQUESTED|BLOCKED`，非 PASS 须有非空 `failure_classes` 列表。当前 history 须完整保留 previous.history 前缀。
+- `history` 为按发生顺序的运行记录；每条唯一 `id`、完整 `candidate_sha`、`kind: check|cli|agent|review`、`metrics`；review 另含 `verdict: PASS|CHANGES_REQUESTED|BLOCKED`，非 PASS 须有非空 `failure_classes` 列表。当前 history 须完整保留 previous.history 前缀，extensions 同样必须完整保留 previous.extensions 前缀，不能覆写旧授权的额度、主体或引用。
 - `next_kind` 为下一批运行类型；`budget: {limits,planned}`。planned 为预计 metrics，时间必须大于0；limits 至少含 elapsed_seconds、model_calls，可另外约束其他指标，使用累计实际值+本次预计值比较。未知受限指标不能放行，时间/调用预算可作为未设 token 限额时的替代。达到边界后不能静默启动下一批；工具不负责运行中自动计量或终止，调用方要监测实际值、取消或收口。
 - previous 的 budget.limits 被提高或移除时，须提供 `budget_authorization: {actor,evidence}`。未提高仍沿用已有授权，不逐次问人；tool 只检查证据引用，不认证其内容真是用户批准。
-- 默认允许同一任务三轮 review。`extensions` 为按顺序扩展：`{after_round,additional_reviews,actor,evidence}`，after_round 必须等于当时可用边界且该轮已实际发生。前三轮后追加一轮即 after_round=3/additional_reviews=1；第四轮后再次追加须新的 after_round=4 授权。不得重复利用同一扩额。
+- 默认允许同一任务三轮 review。`extensions` 为按顺序扩展：`{after_round,additional_reviews,actor,evidence}`，after_round 必须等于当时可用边界且该轮已实际发生。前三轮后追加一轮即 after_round=3/additional_reviews=1；第四轮后再次追加须新的 after_round=4 授权。不得重复利用同一扩额；不同边界不能重复引用同一 SHA-256 的授权文件。
 - 最近一轮非 PASS 后安排 agent/review，`retry` 须含非空 root_cause、strategy_change、exit_condition。追加授权不覆盖失败审查/发布门禁；根因及策略变化的真实性由调用方和 Reviewer 核对。
 
 metrics 每次必须显式列出：elapsed_seconds（非负有限数，其余均为非负整数）、model_calls、cli_calls、atomic_reads、upstream_requests、input_tokens、cached_input_tokens、output_tokens。agent/review 一条记录代表一次模型运行，model_calls=1；check/cli 为0。三个 token 字段允许 null，不能用 CLI 次数冒充原子读取或上游请求；模型运行 usage 三字段全零按未知处理。cached≤input（都已知时），input 包含缓存部分，不把它们再次相加当费用。

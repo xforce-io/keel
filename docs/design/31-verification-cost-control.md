@@ -71,7 +71,7 @@ items 与独立 --items 编号、顺序一致；前置检查与 --prechecks 一�
 
 history 以稳定 task_id 和运行 id 累计，--previous 的 history 必须是当前 history 的完整前缀。CLI/原子读取/上游请求独立计量。token nullable；模型调用全零 usage 转未知，cached 不大于 input。limits 至少包含时间和模型调用数；受限指标未知或累计+预计超限均阻断。放宽/移除旧预算限制须有 actor 和原始授权证据。
 
-审查在同一任务累计，默认 3 轮；追加授权记录 after_round、additional_reviews、actor、证据，连续扩展实际边界，不能重复使用同一边界扩额。失败后追加昂贵运行必须有根因、策略变化和退出条件。授权来源、依赖完备性、统计真实性仍由人/调用方/正式审查核对，不能认证签字。
+审查在同一任务累计，默认 3 轮；追加授权记录 after_round、additional_reviews、actor、证据，连续扩展实际边界，不能重复使用同一边界扩额；previous.extensions 必须作为不可变前缀保留，不能覆写其额度、主体或引用。失败后追加昂贵运行必须有根因、策略变化和退出条件。授权来源、依赖完备性、统计真实性仍由人/调用方/正式审查核对，不能认证签字。
 
 ## 9 边界
 

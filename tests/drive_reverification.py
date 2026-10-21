@@ -71,6 +71,13 @@ def main():
     plan('one-more-round', d, previous=True)
     (root / 'plan.json').write_text(json.dumps(d))
     d['history'] += [continuation(4)['history'][-1]]; plan('fourth-exhausted', d, 1, previous=True)
+    inflated = copy.deepcopy(d); inflated['extensions'][0]['additional_reviews'] = 2
+    plan('cannot-inflate-old-extension', inflated, 1, previous=True)
+    extended = copy.deepcopy(d); extended['extensions'].append({'after_round': 4, 'additional_reviews': 1, 'actor': 'synthetic-user', 'evidence': evidence})
+    plan('cannot-reuse-old-authorization', extended, 1, previous=True)
+    second = root / 'second-approval.txt'; second.write_text('合成批准：第四轮后追加一轮')
+    extended['extensions'][-1]['evidence'] = {'path': second.name, 'sha256': hashlib.sha256(second.read_bytes()).hexdigest()}
+    plan('new-boundary-authorization', extended, previous=True)
     d['history'] = []; plan('cannot-clear-history', d, 1, previous=True)
     home = output / 'scratch-home'; home.mkdir()
     try:

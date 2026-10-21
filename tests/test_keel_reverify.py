@@ -148,6 +148,22 @@ class ReverifyTests(unittest.TestCase):
         del d['retry']; self.blocked(d, previous=True)
         self.blocked(d)  # --initial cannot erase a nonempty task history.
 
+    def test_existing_extension_cannot_be_inflated_removed_or_rewritten(self):
+        previous = copy.deepcopy(self.data); previous['history'] = self.history(3); self.retry(previous)
+        extension = {'after_round': 3, 'additional_reviews': 1, 'actor': 'user', 'evidence': self.evidence('approval.txt')}
+        previous['extensions'] = [extension]; self.write(self.previous, previous)
+        current = copy.deepcopy(previous); current['history'] = self.history(4)
+        for key, value in [('additional_reviews', 2), ('actor', 'other')]:
+            d = copy.deepcopy(current); d['extensions'][0][key] = value
+            result = self.blocked(d, previous=True)
+            self.assertIn('extensions.append-only', str(result['checks']))
+        d = copy.deepcopy(current); d['extensions'] = []; self.blocked(d, previous=True)
+        current['extensions'].append({'after_round': 4, 'additional_reviews': 1, 'actor': 'user', 'evidence': self.evidence('approval.txt')})
+        self.blocked(current, previous=True)
+        (self.root / 'second-approval.txt').write_text('第四轮之后明确新增一轮的合成批准')
+        current['extensions'][-1]['evidence'] = self.evidence('second-approval.txt')
+        self.assertEqual(self.run_plan(current, previous=True).returncode, 0)
+
     def test_text_and_json_readonly_and_copy_install(self):
         before = {p.name: p.read_bytes() for p in self.root.iterdir() if p.is_file()}
         d = copy.deepcopy(self.data); d['command'] = 'touch SHOULD_NOT_EXIST'

@@ -108,6 +108,9 @@ def command(args):
             require(previous.get("task_id") == args.task, "previous.task_id")
             old_history = array(previous.get("history"), "previous.history")
             require(history[:len(old_history)] == old_history, "history.append-only")
+            old_extensions = array(previous.get("extensions", []), "previous.extensions")
+            extensions = array(data.get("extensions", []), "extensions")
+            require(extensions[:len(old_extensions)] == old_extensions, "extensions.append-only")
             old_limits = obj(obj(previous.get("budget"), "previous.budget").get("limits"), "previous.limits")
             limits = obj(obj(data.get("budget"), "budget").get("limits"), "limits")
             if any(k not in limits or limits[k] > v for k, v in old_limits.items()):
@@ -189,6 +192,7 @@ def command(args):
             retry = obj(data.get("retry"), "retry")
             require(all(text(retry.get(k)) for k in ("root_cause", "strategy_change", "exit_condition")), "retry.strategy")
         allowance = 3
+        extension_proofs = set()
         for ext in array(data.get("extensions", []), "extensions"):
             ext = obj(ext, "extension")
             require(type(ext.get("after_round")) is int and ext["after_round"] == allowance
@@ -196,6 +200,9 @@ def command(args):
             require(type(ext.get("additional_reviews")) is int and ext["additional_reviews"] > 0, "extension.additional_reviews")
             require(text(ext.get("actor")), "extension.actor")
             evidence(ext.get("evidence"), "extension.evidence")
+            proof = ext["evidence"]["sha256"]
+            require(proof not in extension_proofs, "extension.evidence.reused")
+            extension_proofs.add(proof)
             allowance += ext["additional_reviews"]
         require(kind not in ("agent", "review") or len(reviews) < allowance, "review.round_limit")
         budget = obj(data.get("budget"), "budget")
