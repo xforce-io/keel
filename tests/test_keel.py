@@ -610,7 +610,7 @@ class KeelReflectContractTests(unittest.TestCase):
         issue = (ROOT / "skills" / "keel-issue" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("唯一明确同一需求则复用", issue)
         self.assertIn("查重成功且无匹配", issue)
-        self.assertIn("先执行并记录平台只读查询的命令、退出状态和结果", issue)
+        self.assertIn("先执行并记录平台只读查询的入口、成功或失败状态和结果", issue)
         self.assertIn("未实际查询、查询未完成、认证失败或返回错误", issue)
         release = (ROOT / "skills" / "keel-release" / "SKILL.md").read_text(encoding="utf-8")
         dev = (ROOT / "skills" / "keel-dev" / "SKILL.md").read_text(encoding="utf-8")
