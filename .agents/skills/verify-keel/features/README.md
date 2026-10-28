@@ -22,3 +22,5 @@
 | [reverification.md](./reverification.md) | 按影响核对复验、确定性前置检查、累计预算及三轮恢复 | #31 S1–S4 |
 
 未列入的 `/keel` 会话路由、各环节 skill 正文：本 Issue 不对则不要 Drive。新增用户可见 CLI 入口时在此加一行并补功能文件；验收 Story 对不上任何一行即 BLOCKED。
+
+| [project-knowledge.md](./project-knowledge.md) | 按任务复用项目知识并核对源码；缺号时查重、复用或建票 | #33 S1–S3 |

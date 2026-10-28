@@ -9,7 +9,7 @@ description: >
 
 # keel-ticket
 
-从当前对话**建一张 Issue**，并切到合法工作分支。不是交付环节。建完停止，不自动 `route` / `design` / `dev` / `end-to-end`。不调用 `keel-issue`。
+从当前对话**建一张 Issue**，并切到合法工作分支。不是交付环节。用户只要求建票时建完停止；由 `keel-issue` 在无号交付任务查重后调用时，返回编号、URL 与分支，调用方按用户原模式继续。不得自己调用 `keel-issue` 或扩大用户意图。
 
 禁止别称：create-github-issue、create-gitlab-issue、intake。
 
@@ -48,7 +48,7 @@ description: >
    - 同名分支已存在 → `BLOCKED`，不覆盖、不改到默认分支上开发
    - `git checkout -b <name> <default-ref>`
 
-5. 报告平台、Issue URL、编号、分支名。**停止。** 不要读 `keel` 去推进交付。
+5. 报告平台、Issue URL、编号、分支名。单独建票时停止；由无号交付任务调用时返回调用方，不自行推进交付。
 
 ## Body 模板（必须使用）
 
