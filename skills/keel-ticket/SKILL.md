@@ -9,7 +9,7 @@ description: >
 
 # keel-ticket
 
-从当前对话**建一张 Issue**，并切到合法工作分支。不是交付环节。建完停止，不自动 `route` / `design` / `dev` / `end-to-end`。不调用 `keel-issue`。
+从当前对话**建一张 Issue**，并切到合法工作分支。不是交付环节。用户只要求建票时建完停止；由 `keel-issue` 在无号交付任务查重后调用时，返回编号、URL 与分支，调用方按用户原模式继续。不得自己调用 `keel-issue` 或扩大用户意图。
 
 禁止别称：create-github-issue、create-gitlab-issue、intake。
 
@@ -48,7 +48,7 @@ description: >
    - 同名分支已存在 → `BLOCKED`，不覆盖、不改到默认分支上开发
    - `git checkout -b <name> <default-ref>`
 
-5. 报告平台、Issue URL、编号、分支名。**停止。** 不要读 `keel` 去推进交付。
+5. 报告平台、Issue URL、编号、分支名。单独建票时停止；由无号交付任务调用时返回调用方，不自行推进交付。
 
 ## Body 模板（必须使用）
 
@@ -105,6 +105,6 @@ description: >
 ## 规则
 
 - Issue = 问题与验收；L1 产品设计与 L2 技术设计按 keel-design 分别维护文档事实源，Issue/评论只放提案摘要、决定与链接。建票不写两份设计、不替用户批准；名词表不进 issue body。
-- 术语以仓库 `docs/glossary.md` 为准。缺失则先补规范名，禁止另造别称。
+- 仓库已有 `docs/glossary.md` 则沿用其中规范名，禁止另造别称；缺失不阻碍建票，也不在默认分支写入。确需沉淀领域术语时，在建票并切到工作分支后按项目约定处理。
 - 不要粘贴大段对话；不要写入密钥或 token。
 - **永不默认 GitHub**；平台以当前 origin 为准，换仓库须重判。

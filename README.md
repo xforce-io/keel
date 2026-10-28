@@ -8,7 +8,7 @@
 |---|---|
 | `keel` | 选模式、选下一合法环节、完整读取该环节 skill |
 | `keel-issue` | 定位仓库、Issue、验收 |
-| `keel-how` | 设计/实现前说明现有子系统怎么工作 |
+| `keel-how` | 设计/实现前按需查找项目知识、核对源码并说明现有子系统 |
 | `keel-design` | 按需写 L1 产品设计与 L2 技术设计 |
 | `keel-dev` | 实现与 `S1…Sn` 验收表 |
 | `keel-verify` | 按应用仓库 `.agents/skills/verify-*` 驾驶手册与功能地图证明 S1…Sn 及适用 L1.8 验收 |
@@ -16,12 +16,14 @@
 | `keel-review` | 独立审查 |
 | `keel-release` | CI、PR/MR、合入；有 runbook 则部署 |
 | `keel-reflect` | 任务后复盘（不在交付链上；你说了才跑） |
-| `keel-ticket` | 建 Issue 并切到 `feat/*` 或 `bugfix/*`（不在交付链上；你说了才跑） |
+| `keel-ticket` | 建 Issue 并切到 `feat/*` 或 `bugfix/*`（不是交付环节；单独建票后停止） |
 | `keel-start` | 进仓看待办与残留分支（不在交付链上；你说了才跑） |
 | `cat-mode` | 风格（不在交付链上；你说了才跑；不启动 `/keel` 状态机） |
 | `keel-sync` | 把 Grok Bot 共享电脑上的 keel 技能更新到 `/workspace/keel`（不在交付链上；你说了才跑） |
 
 也可单独调用 `/keel-design` 等。问不问、写不写由 keel 的两份合同控制；设计章节与验收规则见 [设计合同](skills/keel-design/references/design-contract.md)；项目 `AGENTS.md` 管本地路径/章节映射、Issue 骨架、分支与托管平台，旧的 L1=概要/L2=详细定义须明确迁移。
+
+交付任务未给 Issue 号时先查重：唯一明确匹配则复用，查无匹配则建票后继续；歧义或查询失败时停下说明。`keel-how` 优先使用项目已有知识并核对源码，默认布局与格式见 [项目知识](skills/keel-how/references/project-knowledge.md)；它只提出沉淀建议，开发时维护本次相关文档。
 
 ## 两层设计
 

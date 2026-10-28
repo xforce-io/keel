@@ -18,6 +18,8 @@ description: >
 
 先读 [设计与验收合同](../keel-design/references/design-contract.md)。Issue S 是汇总，适用的 L1.8 验收项是具体实现与验证目标；L1 不适用时使用已有契约与 Issue 验收，不制造 A 编号。实现与验收标准可追踪。开发中跑聚焦检查，送审前跑项目要求的套件。优先用项目已有工具（具名 pytest、套件脚本、进程内 HTTP 客户端）。不要发明仓库外的截图工厂或临时 E2E 层。
 
+实现使本次相关的已有项目知识失效时，在授权范围内同步更新并核对源码依据；how 发现的本任务范围内、值得复用的机制，按项目已有约定沉淀，默认格式见 `../keel-how/references/project-knowledge.md`。无关缺口报告，不擅自扩大范围；不为简单定位强制建文档。
+
 **功能地图不是「额外证据文件」。** 用户能摸到的界面（Web / CLI / TUI / 桌面 / 主 API 路径）：在宣称本环节完成前，对照应用仓库 `.agents/skills/verify-*/features/README.md` 与功能文件。每条用户可见 `S1…Sn` 指定一个主要功能文件（文件名或 README 条目），其中列全 L1.8 子项及必要的跨功能路径。对不上 → `BLOCKED`：在同一 `features/` 下新增或更新文件并改 README 一行，然后才能填验收表结束本环节。不要把 pytest 表当作地图已覆盖。明确无用户界面、且 `S1` 已是可跑命令 → 功能地图/Drive 记 `skip`，写明「无用户路径」；S 本身仍须执行适用验收。查找手册规则与 `keel-verify` 相同（`.agents` 下 `verify-*`，不读 `.cursor`，不认旧 `.grok/skills`）。
 
 独立审查前，为这个 SHA 写验收表，覆盖本 Issue 每条 `S1…Sn`，以及本次可能碰到的、先前已 pass 的 Story：

@@ -592,7 +592,7 @@ class KeelReflectContractTests(unittest.TestCase):
         self.assertNotIn("keel-ticket", _router_stage_order())
         self.assertIn("建票不在本状态机内", router)
         self.assertIn("建完不默认 `route`", router)
-        self.assertIn("禁止改道 `keel-ticket`", router)
+        self.assertIn("按其定位结果继续原模式", router)
         glossary = (ROOT / "docs" / "glossary.md").read_text(encoding="utf-8")
         self.assertRegex(
             glossary,
@@ -601,11 +601,17 @@ class KeelReflectContractTests(unittest.TestCase):
         ticket = (ROOT / "skills" / "keel-ticket" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("feat/{issue}-{short-desc}", ticket)
         self.assertIn("bugfix/{issue}-{short-desc}", ticket)
-        self.assertIn("不自动 `route`", ticket)
+        self.assertIn("用户只要求建票时建完停止", ticket)
+        self.assertIn("调用方按用户原模式继续", ticket)
+        self.assertIn("缺失不阻碍建票，也不在默认分支写入", ticket)
         self.assertIn("git checkout -b <name> <default-ref>", ticket)
         self.assertIn("`title`、`description`", ticket)
         self.assertNotIn("create-github-issue", ticket.split("禁止别称")[0])
         issue = (ROOT / "skills" / "keel-issue" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("唯一明确同一需求则复用", issue)
+        self.assertIn("查重成功且无匹配", issue)
+        self.assertIn("先执行并记录平台只读查询的入口、成功或失败状态和结果", issue)
+        self.assertIn("未实际查询、查询未完成、认证失败或返回错误", issue)
         release = (ROOT / "skills" / "keel-release" / "SKILL.md").read_text(encoding="utf-8")
         dev = (ROOT / "skills" / "keel-dev" / "SKILL.md").read_text(encoding="utf-8")
         for text in (issue, release, dev):
@@ -985,6 +991,7 @@ class KeelVerifyLookupTests(unittest.TestCase):
                 "design-contracts.md",
                 "doctor.md",
                 "install.md",
+                "project-knowledge.md",
                 "provided-environment.md",
                 "release-health.md",
                 "reproduce-before-fix.md",
