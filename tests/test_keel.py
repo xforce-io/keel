@@ -603,6 +603,7 @@ class KeelReflectContractTests(unittest.TestCase):
         self.assertIn("bugfix/{issue}-{short-desc}", ticket)
         self.assertIn("用户只要求建票时建完停止", ticket)
         self.assertIn("调用方按用户原模式继续", ticket)
+        self.assertIn("缺失不阻碍建票，也不在默认分支写入", ticket)
         self.assertIn("git checkout -b <name> <default-ref>", ticket)
         self.assertIn("`title`、`description`", ticket)
         self.assertNotIn("create-github-issue", ticket.split("禁止别称")[0])
