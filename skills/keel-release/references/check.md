@@ -31,7 +31,7 @@
 
 本次不扩展 schema。`design.evidence` 引用固定设计依据文件，列明 L1/L2 的 write/reuse/skip、路径、版本及摘要、产品确认来源、S → L1.8 映射与对应技术设计。至少一份设计适用时使用 design pass；两份均不适用才可 design skip 并附依据。产品确认遵循 [何时问人](../../keel/references/when-to-ask.md)，不要求对已经明确的技术选型重复确认。
 
-各 stories/verify evidence 引用逐项验收结果与原始证据。只有全部适用必需子项 pass 才能汇总 S pass；缺环境、未执行和缺人工判断不能变成 skip。校验器不解析这些正文，不自动检查 L1.8 覆盖率、设计版本关系或确认语义；这些仍由调用方、Reviewer 与 release 核对。详见 [设计合同](../../keel-design/references/design-contract.md)。
+各 stories/verify evidence 引用逐项验收结果与原始证据。只有全部适用必需子项 pass 才能汇总 S pass；缺环境、未执行和缺人工判断不能变成 skip。校验器不解析这些正文，不自动检查 L1.8 覆盖率、设计版本关系或确认语义；这些仍由调用方、Reviewer 与 release 核对。送审前的验收编号、分支、入口和声明关联由 `keel preflight` 另查，不改变本 schema。详见 [设计合同](../../keel-design/references/design-contract.md)。
 
 ## 输出与恢复
 

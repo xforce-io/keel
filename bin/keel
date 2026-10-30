@@ -576,6 +576,12 @@ def commandReverify(args: argparse.Namespace) -> int:
     return runpy.run_path(str(module))["command"](args)
 
 
+def commandPreflight(args: argparse.Namespace) -> int:
+    import runpy
+    module = repoRoot(State.load(homeDir(args.home))) / "skills/keel-verify/scripts/preflight.py"
+    return runpy.run_path(str(module))["command"](args)
+
+
 def buildParser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="keel",
@@ -619,6 +625,14 @@ def buildParser() -> argparse.ArgumentParser:
     history.add_argument("--previous", help="同一任务上一份原始计划；历史只能追加，预算增加须有授权依据")
     reverify.add_argument("--json", action="store_true", help="输出 READY / BLOCKED 和逐项计划；READY 不是验收 PASS")
     reverify.set_defaults(handler=commandReverify)
+    preflight = sub.add_parser("preflight", help="送审前只读核对验收编号、分支、入口和声明关联；不修改证据，不批准交付")
+    preflight.add_argument("record", help="证据声明 JSON；相对证据路径以该文件所在目录为准")
+    preflight.add_argument("--issue", required=True, type=int, help="调用方从任务确认的 Issue 编号")
+    preflight.add_argument("--candidate", required=True, help="调用方取得的当前完整候选 SHA")
+    preflight.add_argument("--required", required=True, help="调用方独立确认的必需编号、分支和入口 JSON，不能从证据索引反推")
+    preflight.add_argument("--previous", help="此前一次预检输出；通过结果仅在候选和关联证据未变时仍可沿用")
+    preflight.add_argument("--json", action="store_true", help="输出机器可读结果；结构通过不是交付批准")
+    preflight.set_defaults(handler=commandPreflight)
     return parser
 
 

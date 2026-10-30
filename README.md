@@ -112,8 +112,17 @@ keel check /path/to/delivery.json --issue 20 --candidate "$candidate_sha" \
 
 `keel reverify` 在昂贵验收前核对复验范围、当前依赖与原始依据、前置检查、累计成本及三轮追加授权。只读返回 READY/BLOCKED，不执行计划或签发产品 PASS，不代替 `keel check`。完整参数、计量边界及可运行样例见 [复验准备合同](skills/keel-verify/references/reverification.md)。开发期先用确定性检查收敛，最终仍完成适用的真实路径和完整独立审查。
 
+## 送审前预检
+
+`keel preflight` 在独立审查前核对调用方确认的验收编号、分支或阶段收尾、入口，以及声明的对象、版本、摘要和证据文件。只读返回 PASS/BLOCKED。PASS 只表示结构与关联一致，并写入「本次可以交接」；它不是交付批准，也不代替 `keel check`。输入合同见 [送审预检](skills/keel-verify/references/preflight.md)。
+
+```bash
+keel preflight /path/to/record.json --issue 26 --candidate "$candidate_sha" \
+  --required /path/to/required.json --json
+```
+
 ## 开发
 
 ```bash
-python3 -m unittest tests.test_keel tests.test_keel_reflect_inspect tests.test_keel_check tests.test_keel_reverify
+python3 -m unittest tests.test_keel tests.test_keel_reflect_inspect tests.test_keel_check tests.test_keel_reverify tests.test_keel_preflight
 ```

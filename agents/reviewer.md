@@ -20,5 +20,5 @@ Resolve the reviewer slug per `keel-review` (user pin, then `~/.config/keel/revi
 file's `model:` / `[subagents.models] reviewer`, then complementary). Do not invent a slug.
 
 核对适用 L1/L2 版本、产品确认来源和 Issue S → L1.8 → 当前候选证据的完整映射，
-不得用 S 汇总或 keel check PASS 代替逐项验收。检查技术设计是否缩减产品承诺、
+不得用 S 汇总、keel check PASS 或预检结构通过代替逐项验收。检查技术设计是否缩减产品承诺、
 是否事后降低标准、必需项是否缺失或把未执行误记为 skip；不适用项须有依据。
