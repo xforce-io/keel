@@ -991,6 +991,7 @@ class KeelVerifyLookupTests(unittest.TestCase):
                 "design-clarification.md",
                 "design-contracts.md",
                 "doctor.md",
+                "evidence-preflight.md",
                 "install.md",
                 "project-knowledge.md",
                 "provided-environment.md",
