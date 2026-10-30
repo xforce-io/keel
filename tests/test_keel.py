@@ -536,6 +536,35 @@ class ProductDesignContractTests(unittest.TestCase):
         self.assertIn("technical.md", text)
         self.assertIn("不自动发现漏验收", text)
 
+    def test_branching_user_story_path_fits_one_diagram(self) -> None:
+        contract = (ROOT / "skills/keel-design/references/design-contract.md").read_text(encoding="utf-8")
+        stories = contract.split("### 6. Stories 与完整交互", 1)[1].split("### 7. 产品规则与边界", 1)[0]
+        for phrase in (
+            "有多个步骤或有分支的用户交互 Story，其路径必须能在一张图里看完",
+            "该 Story 明确指出的、已经画出该路径的已有图的一段",
+            "仅在 L1.4 总览里出现 Story 名称不算覆盖",
+            "数据库、进程、IPC 图不能充当这张用户交互图",
+            "单步且无分支的 Story 可在该 Story 下说明原因后省略图",
+            "没有用户交互的纯技术 Story 可写 N/A 及原因",
+            "不要求每条 Story 各有一张图",
+        ):
+            self.assertIn(phrase, stories, phrase)
+        self.assertNotIn("每条 Story 必须提供交互图", stories)
+        self.assertNotIn("每条 Story 必须提供交互图", contract)
+
+        design = (ROOT / "skills/keel-design/SKILL.md").read_text(encoding="utf-8")
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        overview = readme.split("## 两层设计", 1)[1].split("## 安装", 1)[0]
+        for label, text in (("keel-design", design), ("readme", overview)):
+            self.assertIn("有多个步骤或有分支的用户交互", text, label)
+            self.assertIn("必须能在一张图里看完", text, label)
+            self.assertIn("明确指出的已有图的一段", text, label)
+            self.assertIn("数据库、进程、IPC 图不能充当这张用户交互图", text, label)
+            self.assertIn("单步且无分支", text, label)
+            self.assertIn("N/A", text, label)
+            self.assertIn("不要求每条 Story 各有一张图", text, label)
+            self.assertNotIn("每条 Story 必须提供交互图", text, label)
+
     def test_downstream_stages_consume_detailed_acceptance(self) -> None:
         for stage in ("keel-dev", "keel-verify", "keel-review", "keel-release"):
             text = (ROOT / "skills" / stage / "SKILL.md").read_text(encoding="utf-8")
@@ -1000,6 +1029,7 @@ class KeelVerifyLookupTests(unittest.TestCase):
                 "reverification.md",
                 "review.md",
                 "start.md",
+                "story-path-diagram.md",
                 "sync.md",
                 "ticket.md",
                 "uninstall.md",
