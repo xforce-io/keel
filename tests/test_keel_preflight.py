@@ -299,6 +299,31 @@ class PreflightTests(unittest.TestCase):
                                 capture_output=True, text=True)
         self.assertEqual(result.returncode, 2)
 
+    def test_issue_must_be_an_integer_in_both_documents(self):
+        self.run_preflight([required_item()], [evidence_item(self.file_sha)])
+        cases = (
+            ("required.json", '"issue": 26.0', "26"),
+            ("record.json", '"issue": 26.0', "26"),
+            ("required.json", '"issue": true', "1"),
+            ("record.json", '"issue": true', "1"),
+        )
+        for name, replacement, issue in cases:
+            with self.subTest(name=name, replacement=replacement):
+                self.run_preflight([required_item()], [evidence_item(self.file_sha)], issue=int(issue))
+                path = self.root / name
+                path.write_text(path.read_text(encoding="utf-8").replace(f'"issue": {issue}', replacement, 1),
+                                encoding="utf-8")
+                result = subprocess.run(
+                    [sys.executable, str(CLI), "preflight", str(self.root / "record.json"),
+                     "--issue", issue, "--candidate", SHA, "--required", str(self.root / "required.json"),
+                     "--json"],
+                    cwd=self.root, capture_output=True, text=True,
+                )
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                payload = json.loads(result.stdout)
+                self.assertFalse(payload["ready_for_review"])
+                self.assertEqual(payload["status"], "BLOCKED")
+
 
 if __name__ == "__main__":
     unittest.main()

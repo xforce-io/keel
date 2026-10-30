@@ -105,7 +105,7 @@ def command(args):
         record = load(record_path)
         for label, data in (("required", required), ("record", record)):
             require(type(data.get("schema_version")) is int and data["schema_version"] == 1, label + ".schema_version")
-            require(data.get("issue") == issue, label + ".issue")
+            require(type(data.get("issue")) is int and data["issue"] == issue, label + ".issue")
             require(data.get("candidate_sha") == candidate, label + ".candidate_sha")
         task_id = required.get("task_id")
         require(text(task_id), "required.task_id")
