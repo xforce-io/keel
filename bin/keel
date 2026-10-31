@@ -622,6 +622,7 @@ def buildParser() -> argparse.ArgumentParser:
     reverify.add_argument("--require-agent", action="append", default=[], help="合同明确要求本候选 Agent 实跑的项目，可重复")
     history = reverify.add_mutually_exclusive_group(required=True)
     history.add_argument("--initial", action="store_true", help="仅用于此前无记录的任务，history 必须为空")
+    history.add_argument("--adopt-history", action="store_true", help="首次接入已有审查且无先前复验计划；审查须引用原始证据")
     history.add_argument("--previous", help="同一任务上一份原始计划；历史只能追加，预算增加须有授权依据")
     reverify.add_argument("--json", action="store_true", help="输出 READY / BLOCKED 和逐项计划；READY 不是验收 PASS")
     reverify.set_defaults(handler=commandReverify)

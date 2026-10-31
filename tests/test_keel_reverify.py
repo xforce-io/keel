@@ -56,12 +56,12 @@ class ReverifyTests(unittest.TestCase):
                 'history': [], 'extensions': [], 'next_kind': 'review',
                 'budget': {'limits': {'elapsed_seconds': 600, 'model_calls': 5}, 'planned': metrics()}}
 
-    def run_plan(self, data=None, extra=(), previous=False, cli=CLI, json_output=True):
+    def run_plan(self, data=None, extra=(), previous=False, cli=CLI, json_output=True, adopt=False):
         file = self.root / 'plan.json'; self.write(file, self.data if data is None else data)
         args = [sys.executable, str(cli), *(['--home', str(cli.parents[2])] if cli != CLI else []), 'reverify', str(file), '--task', 'task-31', '--candidate', B,
                 '--baseline', A, '--root', str(self.root), '--items', 'ui,algorithm,resource',
                 '--prechecks', 'streams,consumers,resources', '--changed-path', 'ui.txt', '--changed-path', 'resource.txt']
-        args += ['--previous', str(self.previous)] if previous else ['--initial']
+        args += ['--previous', str(self.previous)] if previous else (['--adopt-history'] if adopt else ['--initial'])
         if json_output: args += ['--json']
         return subprocess.run(args + list(extra), capture_output=True, text=True, cwd=self.root)
 
@@ -123,6 +123,19 @@ class ReverifyTests(unittest.TestCase):
         self.assertEqual(self.run_plan(d, previous=True).returncode, 0)
         d['history'][0]['metrics']['cached_input_tokens'] = 101; self.blocked(d, previous=True)
 
+    def test_unknown_fine_grained_counters_respect_budget_limits(self):
+        d = copy.deepcopy(self.data); d['history'] = self.history(); self.retry(d)
+        d['history'][0]['metrics'].update(atomic_reads=None, upstream_requests=None)
+        d['budget']['planned'].update(atomic_reads=None, upstream_requests=None)
+        result = self.run_plan(d, previous=True)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        report = json.loads(result.stdout)
+        for key in ('atomic_reads', 'upstream_requests'):
+            self.assertIsNone(report['cumulative'][key])
+            self.assertIsNone(report['budget']['projected'][key])
+            limited = copy.deepcopy(d); limited['budget']['limits'][key] = 100
+            self.assertIn('budget.unknown.' + key, str(self.blocked(limited, previous=True)['checks']))
+
     def test_budget_boundaries_extension_and_unchanged_authorization(self):
         d = copy.deepcopy(self.data); d['history'] = self.history(); self.retry(d)
         d['budget']['limits']['model_calls'] = 1; self.blocked(d, previous=True)
@@ -147,6 +160,44 @@ class ReverifyTests(unittest.TestCase):
         self.assertEqual(self.run_plan(d, previous=True).returncode, 0)
         del d['retry']; self.blocked(d, previous=True)
         self.blocked(d)  # --initial cannot erase a nonempty task history.
+
+    def test_adopt_existing_reviews_and_continue_without_reset(self):
+        d = copy.deepcopy(self.data); d['history'] = self.history(); self.retry(d)
+        d['history'][0]['evidence'] = self.evidence('old.txt')
+        result = self.run_plan(d, adopt=True)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertEqual(json.loads(result.stdout)['cumulative']['model_calls'], 1)
+        self.write(self.previous, d)
+        self.assertEqual(self.run_plan(d, previous=True).returncode, 0)
+        changed = copy.deepcopy(d); changed['history'][0]['verdict'] = 'PASS'
+        self.assertIn('history.append-only', str(self.blocked(changed, previous=True)['checks']))
+        (self.root / 'old.txt').write_text('changed')
+        self.assertIn('history.evidence', str(self.blocked(d, previous=True)['checks']))
+
+    def test_adopt_requires_review_evidence_and_enforces_round_limit(self):
+        self.assertIn('adopt-history', str(self.blocked(adopt=True)['checks']))
+        d = copy.deepcopy(self.data); d['history'] = self.history(); self.retry(d)
+        self.assertIn('history.evidence', str(self.blocked(d, adopt=True)['checks']))
+        d['history'][0]['evidence'] = self.evidence('old.txt')
+        initial = self.blocked(d)  # --initial remains restricted to empty history.
+        self.assertIn('--adopt-history', str(initial['checks']))
+        d['history'] = self.history(3)
+        for row in d['history']: row['evidence'] = self.evidence('old.txt')
+        self.assertIn('review.round_limit', str(self.blocked(d, adopt=True)['checks']))
+        d['extensions'] = [{'after_round': 3, 'additional_reviews': 1, 'actor': 'user', 'evidence': self.evidence('approval.txt')}]
+        self.assertEqual(self.run_plan(d, adopt=True).returncode, 0)
+        d['history'][0]['evidence']['sha256'] = '0' * 64
+        self.assertIn('history.evidence.sha256', str(self.blocked(d, adopt=True)['checks']))
+
+    def test_adopt_evidence_uses_previous_directory(self):
+        d = copy.deepcopy(self.data); d['history'] = self.history(); self.retry(d)
+        d['history'][0]['evidence'] = self.evidence('old.txt')
+        original = self.root / 'original'; original.mkdir()
+        (original / 'old.txt').write_text('old.txt')
+        self.previous = original / 'previous.json'; self.write(self.previous, d)
+        self.assertEqual(self.run_plan(d, previous=True).returncode, 0)
+        (original / 'old.txt').unlink()
+        self.assertIn('history.evidence', str(self.blocked(d, previous=True)['checks']))
 
     def test_existing_extension_cannot_be_inflated_removed_or_rewritten(self):
         previous = copy.deepcopy(self.data); previous['history'] = self.history(3); self.retry(previous)
@@ -177,7 +228,7 @@ class ReverifyTests(unittest.TestCase):
         copied = home / '.local/bin/keel'
         self.assertEqual(self.run_plan(cli=copied).returncode, 0)
         help_run = subprocess.run([sys.executable, str(copied), 'reverify', '--help'], capture_output=True, text=True)
-        self.assertEqual(help_run.returncode, 0); self.assertIn('--previous', help_run.stdout)
+        self.assertEqual(help_run.returncode, 0); self.assertIn('--previous', help_run.stdout); self.assertIn('--adopt-history', help_run.stdout)
 
     def test_duplicate_keys_bad_types_and_outside_dependencies(self):
         r = self.run_plan(); file = self.root / 'plan.json'

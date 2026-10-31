@@ -1,6 +1,6 @@
 # 复验准备合同 v1
 
-`keel reverify RECORD --task TASK --candidate SHA --baseline SHA --items IDS --prechecks IDS --root DIR (--initial | --previous FILE) [--changed-path PATH] [--require-agent ID] [--json]`
+`keel reverify RECORD --task TASK --candidate SHA --baseline SHA --items IDS --prechecks IDS --root DIR (--initial | --adopt-history | --previous FILE) [--changed-path PATH] [--require-agent ID] [--json]`
 
 目的：在昂贵运行前核对声明、可读文件和累计预算。返回 READY/0 或 BLOCKED/1，语法错误 2；READY 不代表执行、产品验收、审查或发布 PASS。报告的 budget 同时列出 limits、planned、projected（累计实际值+预计值）；不可计算项为 null，不能伪造零值。根目录、依赖或前置检查失败时，仍保留已可计算的累计值与预算；累计或预计溢出时对应值为 null 并阻断，JSON 不输出 Infinity。输入只读，不运行其中的命令、不调用模型、不连接平台。完整可运行样例在 `../examples/reverify/`，不得把合成样例作为真实交付证据。
 
@@ -9,6 +9,8 @@
 task、候选、baseline、必需验收项、前置检查和 changed-path 从原任务/产品基线/Git 变更独立取得，不能从待检计划反推；依赖列表要包含真正影响本项的代码、配置、输入、Skill 和共享模块。`--require-agent` 逐条列出产品基线要求本候选真实 Agent 实跑的项目。语义完整性由调用方及完整独立审查核对，工具不能发现所有漏报依赖，也不认证作者和授权身份。
 
 已有记录必须提供原始上一份 `--previous`，不能复制改写历史后再冒充 previous。首次使用 --initial 且 history 为空；工具不能识别用户刻意隐瞒的其他任务记录。任务标识、文件名和 SHA 不是认证来源；不允许靠换目录/新 SHA/改 task_id 清零。previous 同样要求 schema_version=1 和完整候选/基线身份；不接受未版本化或损坏的历史基线。previous 路径相对于当前工作目录，其内部证据在后续记录中仍相对于各自 record 所在目录，已继承的 extensions 相对证据按 --previous 文件目录解析，新增授权按当前 record 目录解析；每次跨目录恢复须同时保留上一记录目录中的证据（包括多次移动），也可在首次引用时使用绝对证据路径。不得用当前目录同名文件替代上一记录的原证据。
+
+首次使用工具前已有审查且尚无复验计划时，使用 `--adopt-history`；history 必须非空、至少含一条 review，每条已有 review 的 `evidence: {path, sha256}` 引用原始审查文件，按当前计划目录解析相对路径并核对可读性和摘要。接入之后以该计划为 `--previous`；已继承 review 的相对证据按上一记录目录解析，新追加带证据的 review 按当前记录目录解析，每次跨目录续跑须保留上一记录目录中的证据。旧 previous 的 review 不强制补填证据。工具不解析证据、不认证内容或完整性，调用方须如实声明全部已有历史；再次使用接入入口无法被工具自动识别，不得以此重置历史。
 
 ## JSON 字段
 
@@ -24,7 +26,7 @@ task、候选、baseline、必需验收项、前置检查和 changed-path 从原
 - 默认允许同一任务三轮 review。`extensions` 为按顺序扩展：`{after_round,additional_reviews,actor,evidence}`，after_round 必须等于当时可用边界且该轮已实际发生。前三轮后追加一轮即 after_round=3/additional_reviews=1；第四轮后再次追加须新的 after_round=4 授权。不得重复利用同一扩额；不同边界不能重复引用同一 SHA-256 的授权文件。
 - 最近一轮非 PASS 后安排 agent/review，`retry` 须含非空 root_cause、strategy_change、exit_condition。追加授权不覆盖失败审查/发布门禁；根因及策略变化的真实性由调用方和 Reviewer 核对。
 
-metrics 每次必须显式列出：elapsed_seconds（非负有限数，其余均为非负整数）、model_calls、cli_calls、atomic_reads、upstream_requests、input_tokens、cached_input_tokens、output_tokens。agent/review 一条记录代表一次模型运行，model_calls=1；check/cli 为0。三个 token 字段允许 null，不能用 CLI 次数冒充原子读取或上游请求；模型运行 usage 三字段全零按未知处理。cached≤input（都已知时），input 包含缓存部分，不把它们再次相加当费用。
+metrics 每次必须显式列出：elapsed_seconds（非负有限数，其余均为非负整数）、model_calls、cli_calls、atomic_reads、upstream_requests、input_tokens、cached_input_tokens、output_tokens。agent/review 一条记录代表一次模型运行，model_calls=1；check/cli 为0。atomic_reads、upstream_requests 和三个 token 字段允许 null；未受限的未知值保留为未知，受限指标未知则阻断。不能用 CLI 次数冒充原子读取或上游请求；模型运行 usage 三字段全零按未知处理。cached≤input（都已知时），input 包含缓存部分，不把它们再次相加当费用。
 
 累计值若任一记录对应字段未知则输出 null；可从 history 查阅已知分项。没有发生过的运行总数为0，不能把计量缺失解释为0。各运行 elapsed_seconds 是执行耗时累计，不能误称有并行时的端到端墙钟时间；不提供定价或账单推算。
 

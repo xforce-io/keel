@@ -22,7 +22,7 @@
 | [story-path-diagram.md](./story-path-diagram.md) | 多步骤或有分支的用户交互路径要能在一张图里看完；单步无分支和纯技术可省略 | #38 S1–S3 |
 | [reproduce-before-fix.md](./reproduce-before-fix.md) | agent 先复现调查再定修复方案，修复后原路径对照 | #28 S1–S3 |
 
-| [reverification.md](./reverification.md) | 按影响核对复验、确定性前置检查、累计预算及三轮恢复 | #31 S1–S4 |
+| [reverification.md](./reverification.md) | 按影响核对复验、确定性前置检查、累计预算及三轮恢复 | #31 S1–S4；#40 S1–S2 |
 
 未列入的 `/keel` 会话路由、各环节 skill 正文：本 Issue 不对则不要 Drive。新增用户可见 CLI 入口时在此加一行并补功能文件；验收 Story 对不上任何一行即 BLOCKED。
 
