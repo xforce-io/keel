@@ -14,6 +14,7 @@ KINDS = {"check", "cli", "agent", "review"}
 METRICS = ("elapsed_seconds", "model_calls", "cli_calls", "atomic_reads", "upstream_requests",
            "input_tokens", "cached_input_tokens", "output_tokens")
 TOKENS = set(METRICS[-3:])
+OPTIONAL_METRICS = TOKENS | {"atomic_reads", "upstream_requests"}
 
 
 def require(ok, field):
@@ -65,7 +66,7 @@ def load(path):
 def metrics(value, field, kind):
     row = obj(value, field)
     require(set(row) == set(METRICS), field + ".fields")
-    out = {k: None if row[k] is None and k in TOKENS else number(row[k], field + "." + k) for k in METRICS}
+    out = {k: None if row[k] is None and k in OPTIONAL_METRICS else number(row[k], field + "." + k) for k in METRICS}
     require(out["model_calls"] == (1 if kind in ("review", "agent") else 0), field + ".model_calls")
     # Some hosts report all-zero LLM usage when metering is unavailable.
     if kind in ("review", "agent") and all(out[k] == 0 for k in TOKENS):
@@ -149,6 +150,7 @@ def command(args):
             require(projected[k] is not None, "budget.unknown." + k)
             require(projected[k] <= limit, "budget.exceeded." + k)
         old_extensions = []
+        old_history = []
         previous_path = None
         if args.previous:
             previous_path = Path(args.previous).expanduser().resolve()
@@ -167,8 +169,16 @@ def command(args):
                 auth = obj(data.get("budget_authorization"), "budget_authorization")
                 require(text(auth.get("actor")), "budget_authorization.actor")
                 evidence(auth.get("evidence"), "budget_authorization.evidence")
+        elif args.adopt_history:
+            require(bool(history) and bool(reviews), "adopt-history requires existing review history")
         else:
             require(not history, "initial plan must have empty history; use --previous")
+        for index, row in enumerate(history):
+            if row["kind"] != "review":
+                continue
+            if args.adopt_history or "evidence" in row:
+                base = previous_path.parent if previous_path and index < len(old_history) else path.parent
+                evidence(row.get("evidence"), "history.evidence", base)
         root = Path(args.root).expanduser().resolve()
         require(root.is_dir(), "root.directory")
         rows = array(data.get("items"), "items")

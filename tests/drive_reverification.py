@@ -25,12 +25,12 @@ def main():
         assert r.returncode == expected, (name, r.returncode, r.stdout, r.stderr)
         records.append({'name': name, 'argv': command, 'exit': r.returncode})
         return json.loads(r.stdout, parse_constant=lambda v: (_ for _ in ()).throw(AssertionError(v))) if '--json' in args else r.stdout
-    def plan(name, data, expected=0, extra=(), previous=False, cli=CLI, home=None, json_output=True):
+    def plan(name, data, expected=0, extra=(), previous=False, cli=CLI, home=None, json_output=True, adopt=False):
         file = root / (name + '.json'); file.write_text(json.dumps(data))
         args = ['reverify', str(file), '--task', 'example-31', '--candidate', B, '--baseline', A,
                 '--items', 'ui,algorithm,resource', '--prechecks', 'streams,consumers,resources', '--root', str(root),
                 '--changed-path', 'ui.txt', '--changed-path', 'resource.txt']
-        args += ['--previous', str(root / 'plan.json')] if previous else ['--initial']
+        args += ['--previous', str(root / 'plan.json')] if previous else (['--adopt-history'] if adopt else ['--initial'])
         if json_output: args += ['--json']
         before = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in root.iterdir() if p.is_file()}
         result = invoke(name, args + list(extra), expected, cli, home)
@@ -83,6 +83,30 @@ def main():
         return d
     d = continuation(1); r = plan('resume-metering-unknown', d, previous=True)
     assert r['cumulative']['input_tokens'] is None and r['cumulative']['upstream_requests'] == 8
+    d = continuation(1)
+    d['history'][0]['metrics'].update(atomic_reads=None, upstream_requests=None)
+    d['budget']['planned'].update(atomic_reads=None, upstream_requests=None)
+    d['history'][0]['evidence'] = {'path': 'old.txt', 'sha256': hashlib.sha256((root / 'old.txt').read_bytes()).hexdigest()}
+    r = plan('40-adopt-unknown-unlimited', d, adopt=True)
+    assert all(r['cumulative'][key] is None and r['budget']['projected'][key] is None for key in ('atomic_reads', 'upstream_requests'))
+    for key in ('atomic_reads', 'upstream_requests'):
+        limited = copy.deepcopy(d); limited['budget']['limits'][key] = 100
+        r = plan('40-unknown-limited-' + key, limited, 1, adopt=True)
+        assert any(check['field'] == 'budget.unknown.' + key for check in r['checks'])
+    missing = copy.deepcopy(d); missing['history'][0]['evidence']['path'] = 'missing-review.txt'
+    plan('40-missing-review-evidence', missing, 1, adopt=True)
+    plan('40-initial-rejects-history', d, 1)
+    (root / 'plan.json').write_text(json.dumps(d))
+    plan('40-adopted-history-continuation', d, previous=True)
+    altered = copy.deepcopy(d); altered['history'] = []
+    plan('40-no-history-reset', altered, 1, previous=True)
+    (root / 'plan.json').write_text(json.dumps(base))
+    three = continuation(3)
+    for row in three['history']: row['evidence'] = d['history'][0]['evidence']
+    plan('40-three-round-limit', three, 1, adopt=True)
+    three['extensions'] = [{'after_round': 3, 'additional_reviews': 1, 'actor': 'synthetic-user',
+                            'evidence': {'path': 'approval.txt', 'sha256': hashlib.sha256((root / 'approval.txt').read_bytes()).hexdigest()}}]
+    plan('40-authorized-extension', three, adopt=True)
     d['budget']['limits']['model_calls'] = 1; boundary = plan('budget-boundary', d, 1, previous=True)
     assert boundary['budget']['limits']['model_calls'] == 1 and boundary['budget']['projected']['model_calls'] == 2
     d = continuation(1); d['budget']['limits']['input_tokens'] = 100; plan('unknown-token-limit', d, 1, previous=True)
