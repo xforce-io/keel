@@ -172,7 +172,7 @@ def command(args):
         elif args.adopt_history:
             require(bool(history) and bool(reviews), "adopt-history requires existing review history")
         else:
-            require(not history, "initial plan must have empty history; use --previous")
+            require(not history, "initial plan must have empty history; use --adopt-history for existing reviews without a previous plan, or --previous for an existing plan")
         for index, row in enumerate(history):
             if row["kind"] != "review":
                 continue

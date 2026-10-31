@@ -179,7 +179,8 @@ class ReverifyTests(unittest.TestCase):
         d = copy.deepcopy(self.data); d['history'] = self.history(); self.retry(d)
         self.assertIn('history.evidence', str(self.blocked(d, adopt=True)['checks']))
         d['history'][0]['evidence'] = self.evidence('old.txt')
-        self.blocked(d)  # --initial remains restricted to empty history.
+        initial = self.blocked(d)  # --initial remains restricted to empty history.
+        self.assertIn('--adopt-history', str(initial['checks']))
         d['history'] = self.history(3)
         for row in d['history']: row['evidence'] = self.evidence('old.txt')
         self.assertIn('review.round_limit', str(self.blocked(d, adopt=True)['checks']))
@@ -227,7 +228,7 @@ class ReverifyTests(unittest.TestCase):
         copied = home / '.local/bin/keel'
         self.assertEqual(self.run_plan(cli=copied).returncode, 0)
         help_run = subprocess.run([sys.executable, str(copied), 'reverify', '--help'], capture_output=True, text=True)
-        self.assertEqual(help_run.returncode, 0); self.assertIn('--previous', help_run.stdout)
+        self.assertEqual(help_run.returncode, 0); self.assertIn('--previous', help_run.stdout); self.assertIn('--adopt-history', help_run.stdout)
 
     def test_duplicate_keys_bad_types_and_outside_dependencies(self):
         r = self.run_plan(); file = self.root / 'plan.json'

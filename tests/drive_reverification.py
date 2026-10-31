@@ -95,7 +95,8 @@ def main():
         assert any(check['field'] == 'budget.unknown.' + key for check in r['checks'])
     missing = copy.deepcopy(d); missing['history'][0]['evidence']['path'] = 'missing-review.txt'
     plan('40-missing-review-evidence', missing, 1, adopt=True)
-    plan('40-initial-rejects-history', d, 1)
+    r = plan('40-initial-rejects-history', d, 1)
+    assert any('--adopt-history' in check['field'] for check in r['checks'])
     (root / 'plan.json').write_text(json.dumps(d))
     plan('40-adopted-history-continuation', d, previous=True)
     altered = copy.deepcopy(d); altered['history'] = []
@@ -150,6 +151,8 @@ def main():
         invoke('doctor', ['doctor'], cli=copied, home=home)
         invoke('copy-help', ['reverify', '--help'], cli=copied, home=home)
         plan('copy-ready', base, cli=copied, home=home)
+        adopted = continuation(1); adopted['history'][0]['evidence'] = {'path': 'old.txt', 'sha256': hashlib.sha256((root / 'old.txt').read_bytes()).hexdigest()}
+        plan('copy-adopt-history', adopted, cli=copied, home=home, adopt=True)
         d = copy.deepcopy(base); d['prechecks'][0]['status'] = 'fail'; plan('copy-blocked', d, 1, cli=copied, home=home)
         for name in ('keel-dev', 'keel-verify', 'keel-review'):
             body = (home / '.local/share/agent-skills/library' / name / 'SKILL.md').read_text()

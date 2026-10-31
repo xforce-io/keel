@@ -2,7 +2,7 @@
 
 标准：`docs/design/31-verification-cost-control.md` Draft v1，S1.A1–S4.A1。全部采用隔离目录合成文件、当前实际 CLI，既有 Scratch Launch/Doctor/Cleanup 不变。无平台业务调用，不读真实家目录。
 
-入口：checkout 与 scratch 复制安装 `keel reverify --help`、文本/JSON、`--initial` 和 `--previous`。用 `skills/keel-verify/examples/reverify/make_example.py` 在临时目录生成输入及依赖；样例不是业务验收或真实批准。
+入口：checkout 与 scratch 复制安装 `keel reverify --help`、文本/JSON、`--initial`、`--adopt-history` 和 `--previous`。用 `skills/keel-verify/examples/reverify/make_example.py` 在临时目录生成输入及依赖；样例不是业务验收或真实批准。
 
 - S1.A1：展示/算法/资源三类，核对 actions 和原始 SHA；依赖变化却 retain、无影响重复 agent、明确 --require-agent 却 retain、当前摘要不符和漏掉 changed-path 都 BLOCKED。损坏链接（含中间路径）不可当删除，有效内部普通文件链接正常核对。修正后 READY，文件不被改写。算法实际受影响的样例改为 rerun，不跳过真实必需项。
 - S2.A1：运行 `tests.test_keel_reverify.ReverifyTests.test_minimal_semantic_failure_examples` 的三类契约注入，经实际 CLI 前置失败先 BLOCKED，修正后 READY；记录没有执行任何模型调用。这是通用样例，不是医院或实际 Agent 行为验收。
