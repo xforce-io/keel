@@ -102,6 +102,73 @@ def main():
     altered = copy.deepcopy(d); altered['history'] = []
     plan('40-no-history-reset', altered, 1, previous=True)
     (root / 'plan.json').write_text(json.dumps(base))
+    def meter(kind, **changes):
+        row = dict.fromkeys(('elapsed_seconds', 'model_calls', 'cli_calls', 'atomic_reads', 'upstream_requests',
+                             'input_tokens', 'cached_input_tokens', 'output_tokens'), 0)
+        row.update(elapsed_seconds=10, model_calls=int(kind in ('review', 'agent')),
+                   atomic_reads=None, upstream_requests=None, input_tokens=None,
+                   cached_input_tokens=None, output_tokens=None)
+        row.update(changes)
+        return row
+    def recorded(kind, record_id, **changes):
+        return {'id': record_id, 'candidate_sha': A, 'kind': kind, 'metrics': meter(kind, **changes)}
+    shapes = {
+        'check': [recorded('check', 'check-only')],
+        'cli': [recorded('cli', 'cli-only', cli_calls=1)],
+        'agent': [recorded('agent', 'agent-only', elapsed_seconds=10, cli_calls=1)],
+        'mixed': [recorded('check', 'check'), recorded('cli', 'cli', cli_calls=1),
+                  recorded('agent', 'agent', elapsed_seconds=10, cli_calls=1)],
+    }
+    for name, history in shapes.items():
+        current = copy.deepcopy(base)
+        current['history'] = history
+        current['next_kind'] = history[-1]['kind']
+        current['budget']['planned'] = meter(current['next_kind'], elapsed_seconds=20, cli_calls=1)
+        ready = plan('44-adopt-' + name, current, adopt=True)
+        assert ready['status'] == 'READY' and all(action['executed'] is False for action in ready['actions'])
+        assert ready['cumulative']['model_calls'] == sum(row['metrics']['model_calls'] for row in history)
+    agent = copy.deepcopy(base)
+    agent['history'] = shapes['agent']
+    agent['next_kind'] = 'agent'
+    agent['budget']['planned'] = meter('agent', elapsed_seconds=20, cli_calls=1)
+    adopted = plan('44-adopt-agent-cost', agent, adopt=True)
+    assert adopted['cumulative']['elapsed_seconds'] == 10 and adopted['cumulative']['model_calls'] == 1
+    assert adopted['budget']['projected']['elapsed_seconds'] == 30 and adopted['budget']['projected']['model_calls'] == 2
+    assert adopted['cumulative']['input_tokens'] is None
+    initial = plan('44-initial-rejects-prereview', agent, 1)
+    assert any('--adopt-history' in check['field'] for check in initial['checks'])
+    empty = plan('44-empty-adopt', base, 1, adopt=True)
+    assert any('adopt-history' in check['field'] for check in empty['checks'])
+    (root / 'plan.json').write_text(json.dumps(agent))
+    continued = copy.deepcopy(agent)
+    continued['history'] = agent['history'] + [recorded('agent', 'agent-next', elapsed_seconds=20)]
+    continued['next_kind'] = 'check'
+    continued['budget']['planned'] = meter('check', elapsed_seconds=1)
+    resumed = plan('44-previous-continuation', continued, previous=True)
+    assert resumed['cumulative']['elapsed_seconds'] == 30 and resumed['cumulative']['model_calls'] == 2
+    assert resumed['cumulative']['input_tokens'] is None
+    illegal = copy.deepcopy(agent)
+    illegal['history'][0]['candidate_sha'] = 'not-a-sha'
+    assert any(check['field'] == 'history.candidate' for check in plan('44-illegal-candidate', illegal, 1, adopt=True)['checks'])
+    illegal['history'][0]['candidate_sha'] = A
+    illegal['history'][0]['metrics']['model_calls'] = 0
+    assert any(check['field'] == 'history.metrics.model_calls' for check in plan('44-illegal-metrics', illegal, 1, adopt=True)['checks'])
+    plan('44-legal-again', agent, adopt=True)
+    rewritten = copy.deepcopy(continued)
+    rewritten['history'] = continued['history'][1:]
+    assert any(check['field'] == 'history.append-only' for check in plan('44-rewritten-prefix', rewritten, 1, previous=True)['checks'])
+    limited = copy.deepcopy(agent)
+    limited['budget']['limits']['elapsed_seconds'] = 10
+    assert any(check['field'] == 'budget.exceeded.elapsed_seconds' for check in plan('44-budget-exceeded', limited, 1, adopt=True)['checks'])
+    unknown = copy.deepcopy(agent)
+    unknown['budget']['limits']['input_tokens'] = 100
+    unknown_report = plan('44-unknown-limited', unknown, 1, adopt=True)
+    assert unknown_report['cumulative']['input_tokens'] is None
+    assert any(check['field'] == 'budget.unknown.input_tokens' for check in unknown_report['checks'])
+    raised = copy.deepcopy(continued)
+    raised['budget']['limits']['model_calls'] = 9
+    assert any('budget_authorization' in check['field'] for check in plan('44-raise-without-auth', raised, 1, previous=True)['checks'])
+    (root / 'plan.json').write_text(json.dumps(base))
     three = continuation(3)
     for row in three['history']: row['evidence'] = d['history'][0]['evidence']
     plan('40-three-round-limit', three, 1, adopt=True)

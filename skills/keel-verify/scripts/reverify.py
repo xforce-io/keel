@@ -170,9 +170,9 @@ def command(args):
                 require(text(auth.get("actor")), "budget_authorization.actor")
                 evidence(auth.get("evidence"), "budget_authorization.evidence")
         elif args.adopt_history:
-            require(bool(history) and bool(reviews), "adopt-history requires existing review history")
+            require(bool(history), "adopt-history requires nonempty history without a previous plan")
         else:
-            require(not history, "initial plan must have empty history; use --adopt-history for existing reviews without a previous plan, or --previous for an existing plan")
+            require(not history, "initial plan must have empty history; use --adopt-history for existing runs without a previous plan, or --previous for an existing plan")
         for index, row in enumerate(history):
             if row["kind"] != "review":
                 continue
