@@ -9,6 +9,9 @@
 - S3.A1：预算内 READY；已有消耗+下一批超界 BLOCKED；模型 usage 全0/null输出未知，设 token 限额时未知不能放行；续跑历史累计不丢失、CLI/原子/上游三项独立。前置检查或依赖失败仍展示合法累计/限额/计划/预计；有限数相加溢出 BLOCKED 且标准 JSON 以 null 标明。提高限额缺授权 BLOCKED，有可读授权引用方可继续；未调整预算不额外索要许可。
 - #40 S1：从实际 CLI 使用历史和计划中的未知原子读取、上游请求；未设对应限额时 READY，累计和预计值均为 null；分别设置对应限额时 BLOCKED，未知不补零。
 - #40 S2：首次用 `--adopt-history` 接入一轮带原始证据的审查，再用 `--previous` 续跑；空历史、缺失或错误审查证据、改写历史均 BLOCKED；三轮无扩额 BLOCKED，有效追加授权后 READY，原始 `--initial` 仍拒绝非空历史。
+- #44 S1：`--adopt-history` 接入仅 check、仅 cli、仅 agent、三者混合共 4 种非空历史，review 数为 0，均 READY；累计保留原记录，actions 不执行。同一份 agent 历史用 `--initial` BLOCKED；空历史用 `--adopt-history` BLOCKED。
+- #44 S2：上一份 10 秒 Agent 计划作 `--previous`，追加 20 秒 Agent 后 READY；累计 30 秒、model_calls=2，未知细项累计仍为 null。
+- #44 S3：非法候选或计量、删改历史前缀、预算超限、未知指标被设限均 BLOCKED，修正后可继续。三轮无扩额和提高限额缺授权仍 BLOCKED。
 - S4.A1：三轮失败无追加授权 BLOCKED；暂停/换候选后 previous 完整保留并核对 retry；追加一轮允许第四轮，第四轮用尽再阻断。删除/改写历史、改 task_id、新文件名不解除约束。继承授权按 previous 目录、新授权按当前目录核对；连续移动须保留上一目录证据，同名当前文件不能替代。
 
 复制安装后重复帮助及一条 READY/BLOCKED，doctor 通过；读取安装的 dev/verify/review 合同，确认增量依据、先确定性检查、预算和累计轮次都有引用，旧 `keel check` 门禁不变。

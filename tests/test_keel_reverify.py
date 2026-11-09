@@ -189,6 +189,93 @@ class ReverifyTests(unittest.TestCase):
         d['history'][0]['evidence']['sha256'] = '0' * 64
         self.assertIn('history.evidence.sha256', str(self.blocked(d, adopt=True)['checks']))
 
+    def unknown_metrics(self, kind, **changes):
+        return metrics(kind, atomic_reads=None, upstream_requests=None, input_tokens=None,
+                       cached_input_tokens=None, output_tokens=None, **changes)
+
+    def run_record(self, kind, record_id, **changes):
+        return {'id': record_id, 'candidate_sha': A, 'kind': kind,
+                'metrics': self.unknown_metrics(kind, **changes)}
+
+    def test_adopt_prereview_history_keeps_cost_and_rejects_the_old_gaps(self):
+        shapes = {
+            'check': [self.run_record('check', 'check-only')],
+            'cli': [self.run_record('cli', 'cli-only', cli_calls=1)],
+            'agent': [self.run_record('agent', 'agent-only', elapsed_seconds=10, cli_calls=1)],
+            'mixed': [self.run_record('check', 'check'), self.run_record('cli', 'cli', cli_calls=1),
+                      self.run_record('agent', 'agent', elapsed_seconds=10, cli_calls=1)],
+        }
+        for name, history in shapes.items():
+            d = copy.deepcopy(self.data)
+            d['history'] = history
+            d['next_kind'] = history[-1]['kind']
+            d['budget']['planned'] = self.unknown_metrics(d['next_kind'], elapsed_seconds=20, cli_calls=1)
+            result = self.run_plan(d, adopt=True)
+            self.assertEqual(result.returncode, 0, name + result.stdout)
+            report = json.loads(result.stdout)
+            self.assertEqual(report['status'], 'READY', name)
+            self.assertTrue(report['actions'])
+            self.assertFalse(any(action['executed'] for action in report['actions']))
+            self.assertEqual(report['cumulative']['elapsed_seconds'], sum(row['metrics']['elapsed_seconds'] for row in history))
+            self.assertEqual(report['cumulative']['model_calls'], sum(row['metrics']['model_calls'] for row in history))
+        agent = copy.deepcopy(self.data)
+        agent['history'] = shapes['agent']
+        agent['next_kind'] = 'agent'
+        agent['budget']['planned'] = self.unknown_metrics('agent', elapsed_seconds=20, cli_calls=1)
+        initial = self.blocked(agent)
+        self.assertIn('--adopt-history', str(initial['checks']))
+        self.assertIn('adopt-history', str(self.blocked(adopt=True)['checks']))
+        adopted = json.loads(self.run_plan(agent, adopt=True).stdout)
+        self.assertEqual(adopted['cumulative']['elapsed_seconds'], 10)
+        self.assertEqual(adopted['cumulative']['model_calls'], 1)
+        self.assertEqual(adopted['budget']['projected']['elapsed_seconds'], 30)
+        self.assertEqual(adopted['budget']['projected']['model_calls'], 2)
+        for key in ('atomic_reads', 'upstream_requests', 'input_tokens', 'cached_input_tokens', 'output_tokens'):
+            self.assertIsNone(adopted['cumulative'][key])
+
+        self.write(self.previous, agent)
+        continued = copy.deepcopy(agent)
+        continued['history'] = agent['history'] + [self.run_record('agent', 'agent-next', elapsed_seconds=20)]
+        continued['next_kind'] = 'check'
+        continued['budget']['planned'] = self.unknown_metrics('check', elapsed_seconds=1)
+        result = self.run_plan(continued, previous=True)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        report = json.loads(result.stdout)
+        self.assertEqual(report['cumulative']['elapsed_seconds'], 30)
+        self.assertEqual(report['cumulative']['model_calls'], 2)
+        self.assertIsNone(report['cumulative']['input_tokens'])
+        self.assertEqual(continued['history'][0], agent['history'][0])
+
+        illegal = copy.deepcopy(agent)
+        illegal['history'][0]['candidate_sha'] = 'not-a-sha'
+        self.assertIn('history.candidate', str(self.blocked(illegal, adopt=True)['checks']))
+        illegal['history'][0]['candidate_sha'] = A
+        illegal['history'][0]['metrics']['model_calls'] = 0
+        self.assertIn('history.metrics.model_calls', str(self.blocked(illegal, adopt=True)['checks']))
+        self.assertEqual(self.run_plan(agent, adopt=True).returncode, 0)
+
+        rewritten = copy.deepcopy(continued)
+        rewritten['history'] = continued['history'][1:]
+        self.assertIn('history.append-only', str(self.blocked(rewritten, previous=True)['checks']))
+        limited = copy.deepcopy(agent)
+        limited['budget']['limits']['elapsed_seconds'] = 10
+        self.assertIn('budget.exceeded.elapsed_seconds', str(self.blocked(limited, adopt=True)['checks']))
+        unknown = copy.deepcopy(agent)
+        unknown['budget']['limits']['input_tokens'] = 100
+        blocked = self.blocked(unknown, adopt=True)
+        self.assertIn('budget.unknown.input_tokens', str(blocked['checks']))
+        self.assertIsNone(blocked['cumulative']['input_tokens'])
+
+        rounds = copy.deepcopy(self.data)
+        rounds['history'] = self.history(3)
+        self.retry(rounds)
+        for row in rounds['history']:
+            row['evidence'] = self.evidence('old.txt')
+        self.assertIn('review.round_limit', str(self.blocked(rounds, adopt=True)['checks']))
+        raised = copy.deepcopy(continued)
+        raised['budget']['limits']['model_calls'] = 9
+        self.assertIn('budget_authorization', str(self.blocked(raised, previous=True)['checks']))
+
     def test_adopt_evidence_uses_previous_directory(self):
         d = copy.deepcopy(self.data); d['history'] = self.history(); self.retry(d)
         d['history'][0]['evidence'] = self.evidence('old.txt')
