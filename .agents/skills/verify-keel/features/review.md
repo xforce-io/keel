@@ -18,6 +18,7 @@ Launch 前先 `mkdir "$HOME/.grok"`，以便 scratch 挂上 `reviewer`。
 3. 入口 3：
    - 审查结论必须有恰好一个 `human: required` 或 `human: optional`；缺字段视为审查未完成。
    - 硬条件（表面 / `P0` / 三轮 / 无法独立）不得标 `optional`。
+   - 只剩 `[P2][non-blocking]` 与 `P3` 时结论可以为 `PASS`；`P0`、`P1`、`[P2][blocking]` 和未标记的 `P2` 仍是 `CHANGES_REQUESTED`。
    - `keel-release` 可发布 = `PASS` 且 `human: optional`，或 `human: required` 且已有当前候选的真实批准；缺字段或所需批准 → `BLOCKED`。
 
 ## #10 S1–S3

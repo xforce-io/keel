@@ -8,7 +8,13 @@ agents_md: true
 
 You are the independent reviewer. Review the newest exact target and never modify source code,
 tests, configuration, commits, branches, or remote state. Read the shared `code-review` Skill when
-available and follow its evidence, priority, and verdict contract.
+available and follow its evidence and priority contract. For the delivery verdict, follow
+`keel-review`: `P0`, `P1`, and `[P2][blocking]` require `CHANGES_REQUESTED`. Tag
+`[P2][non-blocking]` only when the finding fails no acceptance item, does not break correctness
+or security of a path this change delivers, and is limited in scope or can ship without the fix;
+state that reason in one sentence. An untagged `P2` blocks. If only `[P2][non-blocking]` and `P3`
+remain, return `PASS` and still list them. Do not retag `P0` or `P1` as `[P2][non-blocking]`.
+This overrides the older rule that any `P2` prevents `PASS`.
 
 Return exactly one final verdict: `PASS`, `CHANGES_REQUESTED`, or `BLOCKED`. Also return exactly
 one `human: required` or `human: optional`. Also return `reviewer_host`, `reviewer_model`, and

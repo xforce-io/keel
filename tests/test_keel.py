@@ -732,6 +732,73 @@ class KeelReviewContractTests(unittest.TestCase):
         self.assertIn("human_approval", release)
         self.assertIn("human_approval", review)
 
+    def test_nonblocking_p2_can_pass(self) -> None:
+        review = (ROOT / "skills" / "keel-review" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("`[P2][non-blocking]`", review)
+        self.assertIn("`[P2][blocking]`", review)
+        self.assertIn(
+            "只剩非阻塞性 `P2` 和/或 `P3` 时结论为 `PASS`，这些发现仍要列出。",
+            review,
+        )
+        self.assertIn("不使本次任一验收（S 或 L1.8）失败", review)
+        self.assertIn("不破坏本次交付路径的正确性或安全性", review)
+        self.assertIn("范围有限或可以不改先交付", review)
+        self.assertIn("该条写一句理由", review)
+        self.assertIn("任一 `P0`、任一 `P1`、任一 `[P2][blocking]`", review)
+        self.assertIn("未标记的 `P2` 视为阻塞", review)
+        self.assertIn("有阻塞项则 `CHANGES_REQUESTED`", review)
+        self.assertIn("不得把 `P0` 或 `P1` 改标成非阻塞性 `P2`", review)
+        self.assertIn("`P3` 仍是建议，除非项目更严", review)
+        self.assertIn(
+            "Reviewer 若把只有非阻塞性 `P2` 和 `P3` 的清单写成 `CHANGES_REQUESTED`，"
+            "父代理按本规则收成 `PASS`，保留原文，不改 `human` 与 "
+            "`reviewer_host` / `reviewer_model` / `source`。",
+            review,
+        )
+        self.assertIn(
+            "三态只允许按上一段，把仅含非阻塞性 `P2` 和 `P3` 的 "
+            "`CHANGES_REQUESTED` 收成 `PASS`。",
+            review,
+        )
+        self.assertIn("父代理不得把仍有阻塞项的结论改成 `PASS`", review)
+        self.assertIn("覆盖 `code-review` 里「任一 `P2` 即不得 `PASS`」", review)
+        self.assertNotIn("`P0`–`P2` 阻塞", review)
+        reviewer = (ROOT / "agents" / "reviewer.md").read_text(encoding="utf-8")
+        self.assertIn("`P0`, `P1`, and `[P2][blocking]` require `CHANGES_REQUESTED`", reviewer)
+        self.assertIn("untagged `P2` blocks", reviewer)
+        self.assertIn(
+            "If only `[P2][non-blocking]` and `P3`\nremain, return `PASS` and still list them.",
+            reviewer,
+        )
+        self.assertIn("Do not retag `P0` or `P1` as `[P2][non-blocking]`", reviewer)
+        self.assertIn("any `P2` prevents `PASS`", reviewer)
+        glossary = (ROOT / "docs" / "glossary.md").read_text(encoding="utf-8")
+        self.assertRegex(
+            glossary,
+            re.compile(
+                r"^\| 非阻塞性 P2 \| 审查发现，条目标记为 \[P2\]\[non-blocking\] 并写一句理由："
+                r"不使本次任一验收（S 或 L1\.8）失败，不破坏本次交付路径的正确性或安全性，"
+                r"且范围有限或可以不改先交付；只剩它和 P3 时结论为 PASS，这些发现仍列出。 \|",
+                re.M,
+            ),
+        )
+        self.assertRegex(
+            glossary,
+            re.compile(
+                r"^\| 阻塞性 P2 \| 审查发现，条目标记为 \[P2\]\[blocking\]，或未标记的 P2；"
+                r"它使审查结论为 CHANGES_REQUESTED。 \|",
+                re.M,
+            ),
+        )
+        feature = (
+            ROOT / ".agents/skills/verify-keel/features/review.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "只剩 `[P2][non-blocking]` 与 `P3` 时结论可以为 `PASS`；"
+            "`P0`、`P1`、`[P2][blocking]` 和未标记的 `P2` 仍是 `CHANGES_REQUESTED`。",
+            feature,
+        )
+
     def test_review_model_resolves_from_bind_not_inherit(self) -> None:
         review = (ROOT / "skills" / "keel-review" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("**Cursor：**", review)

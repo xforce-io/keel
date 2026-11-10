@@ -51,9 +51,9 @@ description: >
 
 同一任务累计三轮仍非 `PASS` 则交给人，不因新 SHA、目录或暂停恢复清零。明确授权追加时保留总轮次/成本及授权原文，先说明共同根因、策略变化、剩余缺口和退出条件，再核对预算；只允许获准的追加范围，不能默认原样重启全套流程。READY 不代替独立审查或解除任何发布门禁。
 
-`PASS` 且（`human: optional`，或 `human: required` 已获得当前候选的真实人工批准）才能交给发布。`P0`–`P2` 阻塞；`P3` 建议，除非项目更严。`CHANGES_REQUESTED` 回到 `keel-dev` → `keel-verify` 后再审；`BLOCKED` 停在缺失证据或能力。代码审查不代替验收表。
+`PASS` 且（`human: optional`，或 `human: required` 已获得当前候选的真实人工批准）才能交给发布。`CHANGES_REQUESTED` 回到 `keel-dev` → `keel-verify` 后再审；`BLOCKED` 停在缺失证据或能力。阻塞项是任一 `P0`、任一 `P1`、任一 `[P2][blocking]`（阻塞性 `P2`）。有阻塞项则 `CHANGES_REQUESTED`。`[P2][non-blocking]`（非阻塞性 `P2`）须同时满足：不使本次任一验收（S 或 L1.8）失败，不破坏本次交付路径的正确性或安全性，且范围有限或可以不改先交付；该条写一句理由。三条有一条做不到，就是 `[P2][blocking]`。未标记的 `P2` 视为阻塞。只剩非阻塞性 `P2` 和/或 `P3` 时结论为 `PASS`，这些发现仍要列出。不得把 `P0` 或 `P1` 改标成非阻塞性 `P2`。`P3` 仍是建议，除非项目更严。Reviewer 若把只有非阻塞性 `P2` 和 `P3` 的清单写成 `CHANGES_REQUESTED`，父代理按本规则收成 `PASS`，保留原文，不改 `human` 与 `reviewer_host` / `reviewer_model` / `source`。代码审查不代替验收表。
 
-结论必须同时有恰好一个三态（`PASS` / `CHANGES_REQUESTED` / `BLOCKED`）、恰好一个 `human: required` 或 `human: optional`，以及 `reviewer_host`、`reviewer_model`、`source`（恰好一个：`user` / `bind-file` / `host-config` / `complementary`）。缺 `human`、缺三列任一、两个都写、或其它取值 → 审查未完成，不得进入 `keel-release`。不要收成第四个三态。`CHANGES_REQUESTED` / `BLOCKED` 时 `human` 与三列仍必须出现。`human` 由 Reviewer 给出；父代理不得补写或改写。外部 `code-review` 仍只管缺陷、证据与 `P0`–`P3`。
+结论必须同时有恰好一个三态（`PASS` / `CHANGES_REQUESTED` / `BLOCKED`）、恰好一个 `human: required` 或 `human: optional`，以及 `reviewer_host`、`reviewer_model`、`source`（恰好一个：`user` / `bind-file` / `host-config` / `complementary`）。缺 `human`、缺三列任一、两个都写、或其它取值 → 审查未完成，不得进入 `keel-release`。不要收成第四个三态。`CHANGES_REQUESTED` / `BLOCKED` 时 `human` 与三列仍必须出现。`human` 由 Reviewer 给出；父代理不得补写或改写 `human` 与三列。三态只允许按上一段，把仅含非阻塞性 `P2` 和 `P3` 的 `CHANGES_REQUESTED` 收成 `PASS`。外部 `code-review` 仍只管缺陷、证据与 `P0`–`P3` 分级。交付三态以本 skill 的阻塞规则为准，覆盖 `code-review` 里「任一 `P2` 即不得 `PASS`」。父代理不得把仍有阻塞项的结论改成 `PASS`。
 
 `PASS` + `human: required` → 未获当前候选的人工批准时停，把分级意见给人。获得真实批准后，按 [交付校验合同](../keel-release/references/check.md) 记录独立的 `human_approval`，重新校验后可进入 `keel-release`；保留 Reviewer 原始 `human: required`，不改成 optional。会话批准有效，不强制用户重复去平台批准；候选改变后须重新人审。人工批准不能覆盖 `CHANGES_REQUESTED` / `BLOCKED`。
 
