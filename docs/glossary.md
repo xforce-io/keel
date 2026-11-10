@@ -13,6 +13,8 @@
 | keel-review | 环节 skill。对最新精确目标做独立审查。 | 自己审自己、reviewers.md |
 | 团队审查角色 | 当前会话或团队中明确承担独立审查职责、可由调用方交付审查任务的角色。 | — |
 | reviewer | Grok 审查 agent 类型。由 `keel install` 挂到 `~/.grok/agents/reviewer.md`，`permission_mode: plan`；模型 slug 留在本机（`~/.config/keel/reviewer` 或宿主配置），不写进 keel skill。 | setup-pstack 模型表、general-purpose 自审 |
+| 非阻塞性 P2 | 审查发现，条目标记为 [P2][non-blocking] 并写一句理由：不使本次任一验收（S 或 L1.8）失败，不破坏本次交付路径的正确性或安全性，且范围有限或可以不改先交付；只剩它和 P3 时结论为 PASS，这些发现仍列出。 | 建议、nit |
+| 阻塞性 P2 | 审查发现，条目标记为 [P2][blocking]，或未标记的 P2；它使审查结论为 CHANGES_REQUESTED。 | — |
 | keel-release | 环节 skill。CI、PR/MR、合入；有 runbook 则部署与核对。 | 本地跑起来、release.md |
 | keel-reflect | 任务后复盘 skill。三透镜后给出 Accepted / Rejected / Backlog，人批再改 skill、AGENTS 或建 Issue。不是交付环节。 | reflection 2、自学习、pstack reflect 自动 apply |
 | keel-ticket | 建票配套 skill。从对话创建 GitHub / GitLab Issue，并切到 `feat/{issue}-*` 或 `bugfix/{issue}-*`。不是交付环节。 | create-github-issue、create-gitlab-issue、intake、keel-issue |
