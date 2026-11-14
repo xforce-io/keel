@@ -6,7 +6,7 @@
 | [install.md](./install.md) | `keel install` 把 skill 与 CLI 挂到 `--home`；不写 `.agents/skills/` | 安装后 library + bin 可用 |
 | [ticket.md](./ticket.md) | install 后能 `find keel-ticket`；工作分支只许 `feat/*` / `bugfix/*` | #4 S1–S4 |
 | [start.md](./start.md) | install 后能 `find keel-start`；进仓只读、说清才删残留 | #6 S1–S4 |
-| [review.md](./review.md) | install 后能 `find keel-review`；优先团队审查角色并保留模型、独立性与人工门禁 | #7 S1–S3；#10 S1–S3；#41 S1–S3；#49 S1–S2 |
+| [review.md](./review.md) | install 后能 `find keel-review`；优先团队审查角色并保留模型、独立性与人工门禁；交接原始依据并说明核实边界 | #7 S1–S3；#10 S1–S3；#41 S1–S3；#49 S1–S2；#48 S1–S2 |
 | [doctor.md](./doctor.md) | `keel doctor` 只读报告 keel 挂载与占用，无外部审查工具也可用 | 缺失或占用时退出码 1；#49 S3 |
 | [uninstall.md](./uninstall.md) | `keel uninstall` 只拆 keel 自己挂上的链接或副本 | 外人不删；`--keep-bin` 留 CLI |
 | [sync.md](./sync.md) | 仓库里有 `keel-sync`；install/doctor 能列出；Grok Bot 按该文件更新账号级 skill | #16 S1–S3 |
