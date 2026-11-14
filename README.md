@@ -40,7 +40,7 @@ Issue S 是交付汇总，L1.8 用稳定验收 ID 细化前置、真实入口、
 前置条件：
 
 - Python ≥ 3.11。
-- `local-skill` 在 PATH，且 `local-skill find code-review` 能找到审查合同 skill。`keel-review` 靠它把 `code-review` 交给 Reviewer；找不到该环节直接 `BLOCKED`。`code-review` 不随 keel 分发。`keel doctor` 会检查这两项。
+- `keel-review` 自带最小审查准则，不依赖外部 `code-review` 或 `local-skill`。用户或项目明确要求的额外审查规则仍须读取；不可读时在审查环节报告 `BLOCKED`。`local-skill` 可选，用于发现 skill 和刷新已有索引。
 
 克隆后把全部 skill 挂到本机：
 
@@ -66,7 +66,7 @@ cd keel
 ```bash
 ./bin/keel install --copy      # 不能建符号链接时复制；再次 install --copy 会整体刷新副本
 ./bin/keel install --plugin    # 再执行 grok plugin install . --trust
-./bin/keel doctor              # 只读检查；有缺失、占用或找不到 code-review 则退出码 1
+./bin/keel doctor              # 只读检查；keel 挂载有缺失或占用则退出码 1
 ./bin/keel uninstall           # 只拆 keel 自己挂上的链接或副本
 ```
 

@@ -15,7 +15,7 @@ description: >
 
 进入流程前完整读取 `references/when-to-ask.md` 与 `references/when-to-write.md`。要不要问人、要不要写设计以那两份为准，不把表抄进本文件。
 
-服从当前有效的全局与项目 `AGENTS.md`。不复制项目规则、不代替 `code-review`、不发明部署手册。
+服从当前有效的全局与项目 `AGENTS.md`。不复制项目规则、不代替 `keel-review` 的审查职责、不发明部署手册。
 
 ## 环节 skill
 
