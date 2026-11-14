@@ -40,7 +40,7 @@ Launch 前先 `mkdir "$KEEL_VERIFY_HOME/.grok"`，以便 scratch 挂上 `reviewe
 
 ## 不做
 
-除 #41 的授权团队交接及 #49 的合成审查情境外，不在 Drive 里调 Reviewer。不改外部 `code-review`。不对本机现网 `~/.grok/agents/reviewer.md` 做 install / uninstall。
+除 #41 的授权团队交接及 #49/#48 的合成审查情境外，不在 Drive 里调 Reviewer。不改外部 `code-review`。不对本机现网 `~/.grok/agents/reviewer.md` 做 install / uninstall。
 
 
 ## #49 S1–S2
@@ -53,3 +53,16 @@ Launch 前先 `mkdir "$KEEL_VERIFY_HOME/.grok"`，以便 scratch 挂上 `reviewe
 - S2.A2：明确要求的规则路径不存在时，实际输出 BLOCKED 并点明路径，不回退成默认通过。规则冲突未解决同样阻断。
 
 原始输入、读取路径和实际 agent 输出存入本票证据目录。S3 的 CLI 正常/缺失/占用与只读检查见 doctor.md；#7/#10 的原人审、来源及模型规则按本文件入口 3 保全，不新增平台集成。
+
+
+## #48 S1–S2
+
+基线：[L1 v1](../../../../docs/design/48-review-handoff/product.md) §8；仅执行本次对上的情境，不重跑 #41 全部团队角色分支。
+
+1. 入口 1–3：按手册 scratch 安装、Doctor 与查找，读取已安装 keel-review；核对它对应当前候选，所有材料引用可读。沿用 #49 的内置准则和可选外部规则，不因缺 locator 或同名 skill 阻断；明确要求的附加合同不可读仍阻断。
+2. S1.A1 / 交接入口：给真实 agent 一组隔离合成材料，包含需求、冻结目标与完整差异、设计验收映射、测试/驾驶证据、预检、内置审查准则及明确适用的附加合同，以及实现者“已完整覆盖”的评价和失败记录。让其按候选 skill 准备交接；检查材料齐全、必要解释标为待核实、评价不作通过依据且失败与缺口未被删掉。
+3. S1.A2 / 同一入口：移除完整 diff 或当前预检，让其处理；实际输出应按原规则 BLOCKED 并指出缺口，不猜测通过。
+4. S2.A1 / 结论入口：让 Reviewer 静态审阅合成差异和调用方测试输出，不执行命令；记录实际输出，区分直接审阅、亲自执行（未执行）、依赖已有证据及无法核实，注明来源且保留原结论字段。不把这个合成结果当成本票正式独立审查。
+5. S2.A2 / 入口 3：核对完整 diff 和既有回归，确认没有改动模型、人审、三态、来源、三轮规则或复制 code-review checklist，没有新增 CLI/schema/校验器/门禁；正式独立审查另行核对。
+
+原始输入、agent 输出、候选 SHA、时间和入口存入本票证据目录。上述情境不能以硬编码输出替代；缺条件记 blocked，未执行记 not_run。
