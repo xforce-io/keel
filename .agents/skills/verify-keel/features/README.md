@@ -11,7 +11,7 @@
 | [uninstall.md](./uninstall.md) | `keel uninstall` 只拆 keel 自己挂上的链接或副本 | 外人不删；`--keep-bin` 留 CLI |
 | [sync.md](./sync.md) | 仓库里有 `keel-sync`；install/doctor 能列出；Grok Bot 按该文件更新账号级 skill | #16 S1–S3 |
 
-| [verify-gates.md](./verify-gates.md) | 开发地图覆盖、verify 发布门禁、设计映射与独立维护入口 | #18 S1–S4 |
+| [verify-gates.md](./verify-gates.md) | 开发地图覆盖、verify 发布门禁、设计映射与独立维护入口 | #18 S1–S4；#52 S1–S2 |
 
 | [delivery-gate.md](./delivery-gate.md) | 平台中立 check：索引、阻断恢复与三类路径 | #20 S1–S3 |
 | [evidence-preflight.md](./evidence-preflight.md) | `keel preflight` 在送审前核对编号、分支、入口和声明关联 | #26 S1–S2 |
