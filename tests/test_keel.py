@@ -1128,6 +1128,15 @@ class KeelVerifyLookupTests(unittest.TestCase):
         )
 
 
+class VerifyScratchSafetyTests(unittest.TestCase):
+    def test_handbook_and_all_features_never_target_live_home_variables(self) -> None:
+        handbook = ROOT / ".agents/skills/verify-keel"
+        unsafe = re.compile(r"\$(?:HOME|BIN)\b|\$\{(?:HOME|BIN)\}")
+        for path in handbook.rglob("*.md"):
+            with self.subTest(path=path.relative_to(ROOT)):
+                self.assertIsNone(unsafe.search(path.read_text(encoding="utf-8")))
+
+
 class HandbookPathWordingTests(unittest.TestCase):
     DOCS = (
         "README.md",

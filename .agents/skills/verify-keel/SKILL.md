@@ -39,7 +39,7 @@ KEEL_VERIFY_BIN="$KEEL_VERIFY_HOME/.local/bin"
 
 只打开 `features/` 里对上本 Issue `S1…Sn` 的文件（外加本次会碰到的、先前已 pass 的功能）。文件列出的**每一条用户入口都要走**；只跑 unittest 或只跑一条 CLI 算未完成。
 
-需要隔离宿主时另开 scratch home，不要复用已污染的 `$HOME`。
+需要隔离宿主时另开 scratch home，不要复用已污染的 `$KEEL_VERIFY_HOME`。
 
 ## Evidence
 

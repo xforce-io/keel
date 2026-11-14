@@ -12,7 +12,7 @@ bin/keel 的 reviewContractStatus 调用 local-skill，只检查返回码和非�
 
 ## 3. 总体架构与关键路径
 
-删除 reviewContractStatus、其常量和 Doctor 调用。沿用已有挂载核对和退出码；最小审查准则只在 keel-review 中维护，角色引用它，路由不复制环节规则。
+删除 reviewContractStatus、其常量和 Doctor 调用。沿用已有挂载核对和退出码；最小审查准则只在 keel-review 中维护，角色引用它，路由不复制环节规则。驾驶手册与所有功能页统一使用 KEEL_VERIFY_HOME/KEEL_VERIFY_BIN，避免调用方落回真实家目录。
 
 ## 4. 数据与状态契约
 
