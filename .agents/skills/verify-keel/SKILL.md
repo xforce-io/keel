@@ -16,11 +16,10 @@ check 的隔离输入、三类样例和恢复路径见 `features/delivery-gate.m
 在**本仓库当前分支**跑 CLI，不要用 PATH 上过期的 `keel`。Drive 一律走 scratch `--home`，禁止对现网家目录做 install / uninstall。
 
 ```bash
-HOME=$(mktemp -d /tmp/keel-verify-home.XXXX)
-BIN="$HOME/.local/bin"
-# 本机 PATH 里要有能 `local-skill find code-review` 的 local-skill（keel-review 依赖它）。
-# 不要为了验证去卸用户的 code-review。
-./bin/keel --home "$HOME" --bin-dir "$BIN" install
+KEEL_VERIFY_HOME=$(mktemp -d /tmp/keel-verify-home.XXXX)
+KEEL_VERIFY_BIN="$KEEL_VERIFY_HOME/.local/bin"
+# 不需要 local-skill 或外部 code-review；不要修改用户现有的审查规则。
+./bin/keel --home "$KEEL_VERIFY_HOME" --bin-dir "$KEEL_VERIFY_BIN" install
 ```
 
 `library` 是必挂宿主。其它宿主（grok / claude / cursor / …）只有 scratch home 下对应探测目录存在才会挂。需要测某宿主时，Launch 里先 `mkdir` 再 install。
@@ -29,10 +28,10 @@ BIN="$HOME/.local/bin"
 
 全部成立才 Drive：
 
-1. `./bin/keel --home "$HOME" --bin-dir "$BIN" doctor` 退出码 `0`
+1. `./bin/keel --home "$KEEL_VERIFY_HOME" --bin-dir "$KEEL_VERIFY_BIN" doctor` 退出码 `0`
 2. 输出含 `root:` 指向本仓库，且 `skills:` 列出 `cat-mode keel keel-design keel-dev keel-how keel-issue keel-reflect keel-release keel-review keel-start keel-sync keel-ticket keel-verify`
 3. `library/keel` 与 `bin` 均为本 CLI 的 symlink 或 copy，不是 `未安装` / `占用且不是 keel`
-4. `code-review: ok`（来自 PATH 上的 `local-skill find`）
+4. 不要求外部 code-review 或 local-skill；审查合同由 keel-review 自带，明确指定的附加规则在审查环节核对。
 
 失败则 `BLOCKED`，不要对现网家目录补救。
 
@@ -40,7 +39,7 @@ BIN="$HOME/.local/bin"
 
 只打开 `features/` 里对上本 Issue `S1…Sn` 的文件（外加本次会碰到的、先前已 pass 的功能）。文件列出的**每一条用户入口都要走**；只跑 unittest 或只跑一条 CLI 算未完成。
 
-需要隔离宿主时另开 scratch home，不要复用已污染的 `$HOME`。
+需要隔离宿主时另开 scratch home，不要复用已污染的 `$KEEL_VERIFY_HOME`。
 
 ## Evidence
 
@@ -56,8 +55,8 @@ BIN="$HOME/.local/bin"
 ## Cleanup
 
 ```bash
-./bin/keel --home "$HOME" --bin-dir "$BIN" uninstall
-rm -rf "$HOME"
+./bin/keel --home "$KEEL_VERIFY_HOME" --bin-dir "$KEEL_VERIFY_BIN" uninstall
+rm -rf "$KEEL_VERIFY_HOME"
 ```
 
 只拆本次 scratch。**不得**对用户现网 `~/.config/keel` / `~/.local/bin/keel` 跑 uninstall。**不得删除** `.agents/verify-runs/`。

@@ -2,12 +2,12 @@
 
 CLI / 文件与会话入口。不合入。#41 的团队交接要有实际角色运行的证据；该验证不替代正式独立审查。
 
-Launch 前先 `mkdir "$HOME/.grok"`，以便 scratch 挂上 `reviewer`。
+Launch 前先 `mkdir "$KEEL_VERIFY_HOME/.grok"`，以便 scratch 挂上 `reviewer`。
 
 ## 用户入口（必须都走）
 
-1. **挂载**：Launch 之后 `$HOME/.local/share/agent-skills/library/keel-review/SKILL.md` 与 `…/keel-release/SKILL.md` 指向本仓库对应 skill；`$HOME/.grok/agents/reviewer.md` 指向本仓库 `agents/reviewer.md`。
-2. **查找**：`local-skill find keel-review` 退出码 `0`。
+1. **挂载**：Launch 之后 `$KEEL_VERIFY_HOME/.local/share/agent-skills/library/keel-review/SKILL.md` 与 `…/keel-release/SKILL.md` 指向本仓库对应 skill；`$KEEL_VERIFY_HOME/.grok/agents/reviewer.md` 指向本仓库 `agents/reviewer.md`。
+2. **查找**：从已安装 library 或宿主 skill 列表读取 keel-review；local-skill 可用时也可查找，不要求安装它。
 3. **合同原文**：读本仓库 `skills/keel-review/SKILL.md`、`skills/keel-release/SKILL.md`、`skills/keel-verify/SKILL.md`、`agents/reviewer.md`。
 4. **团队会话**：在有授权的当前会话核实团队关系及专职角色、模型和实际调用能力；按当前候选 skill 提供只读任务并读取完整实际输出，记录精确候选、角色、宿主、模型、来源、状态及原始结果。不因状态未知或发送成功假定任务完成；不可用或无授权时该入口 BLOCKED。
 
@@ -36,8 +36,20 @@ Launch 前先 `mkdir "$HOME/.grok"`，以便 scratch 挂上 `reviewer`。
 
 在本次目标真实团队会话记录实际交接；其余拒绝/回退条件用隔离情境实际检验并记录结果。合同原文和自动检查不能替代实际角色输出，模拟不能冒充宿主故障或人审批准。
 
-判定：`ls -l`、`local-skill find`、合同原文，以及 #41 的真实团队交接与角色输出、各隔离情境的判断分别存证；任一必需入口缺证不能汇总为通过。
+判定：`ls -l`、实际读取的 skill 路径、合同原文，以及 #41 的真实团队交接与角色输出、各隔离情境的判断分别存证；任一必需入口缺证不能汇总为通过。
 
 ## 不做
 
-除 #41 所需的授权团队交接外，不在 Drive 里调 Reviewer。不改外部 `code-review`。不对本机现网 `~/.grok/agents/reviewer.md` 做 install / uninstall。
+除 #41 的授权团队交接及 #49 的合成审查情境外，不在 Drive 里调 Reviewer。不改外部 `code-review`。不对本机现网 `~/.grok/agents/reviewer.md` 做 install / uninstall。
+
+
+## #49 S1–S2
+
+基线：[L1 v1](../../../../docs/design/49-self-contained-review/product.md) §8。只 Drive 本票情境及适用保全检查，不重跑 #41 全部分支。
+
+- S1.A1：从 scratch 安装后的 skill 读取内置准则，在没有 local-skill/code-review 的环境中给真实独立 agent 合成需求、完整差异与证据；确认能审查正确性、回归、安全和契约问题，引用具体依据并给出既有三态、人审与来源字段，不因缺外部工具阻断。合成结果不当作正式交付批准。
+- S1.A2：给出缺完整差异或必要证据的情境，确认仍按原规则 BLOCKED，不以解除依赖为由放行。
+- S2.A1：给定一个可读外部规则文件，实际读取并交接，验证规则对审查结果有效，记录来源和适用范围；不以同名认定合同内容。
+- S2.A2：明确要求的规则路径不存在时，实际输出 BLOCKED 并点明路径，不回退成默认通过。规则冲突未解决同样阻断。
+
+原始输入、读取路径和实际 agent 输出存入本票证据目录。S3 的 CLI 正常/缺失/占用与只读检查见 doctor.md；#7/#10 的原人审、来源及模型规则按本文件入口 3 保全，不新增平台集成。

@@ -4,7 +4,7 @@ CLI / 文件入口。不调 monastery。
 
 ## 用户入口（必须都走）
 
-1. **挂载**：Launch 之后 `$HOME/.local/share/agent-skills/library/keel-start/SKILL.md` 指向本仓库 `skills/keel-start/SKILL.md`。
+1. **挂载**：Launch 之后 `$KEEL_VERIFY_HOME/.local/share/agent-skills/library/keel-start/SKILL.md` 指向本仓库 `skills/keel-start/SKILL.md`。
 2. **查找**：`local-skill find keel-start` 退出码 `0`。
 3. **合同原文**：读 `skills/keel-start/SKILL.md`、`skills/keel/SKILL.md`。
 

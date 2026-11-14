@@ -33,7 +33,6 @@ LOOKUP = ROOT / "skills" / "keel-verify" / "lookup.py"
 FAKE_LOCAL_SKILL = """#!/bin/sh
 case "$1" in
   refresh) echo refreshed ;;
-  find) [ "$2" = "code-review" ] && echo /fake/code-review/SKILL.md || exit 1 ;;
   *) exit 2 ;;
 esac
 """
@@ -54,7 +53,7 @@ def run_keel(
     *args: str,
     cli: Path = CLI,
     root: Path | None = ROOT,
-    with_local_skill: bool = True,
+    with_local_skill: bool = False,
 ) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env["KEEL_HOME"] = str(home)
@@ -285,19 +284,43 @@ class KeelCopyModeTests(unittest.TestCase):
             self.assertIn("library/keel-verify:", ok.stdout)
             self.assertIn("library/keel-how:", ok.stdout)
             self.assertIn("library/keel-reflect:", ok.stdout)
-            self.assertIn("code-review: ok", ok.stdout)
+            self.assertNotIn("code-review: ok", ok.stdout)
             self.assertNotIn("未安装", ok.stdout)
 
-    def test_doctor_flags_missing_local_skill_and_code_review(self) -> None:
+    def test_install_doctor_uninstall_without_external_review_tools(self) -> None:
         import tempfile
 
         with tempfile.TemporaryDirectory() as raw:
             home = Path(raw)
-            run_keel(home, "install")
+            installed = run_keel(home, "install")
+            self.assertEqual(installed.returncode, 0, installed.stderr + installed.stdout)
+            state = home / ".config/keel/state.json"
+            before = state.read_bytes()
             result = run_keel(home, "doctor", with_local_skill=False)
-            self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
-            self.assertIn("local-skill: ⚠ 未在 PATH", result.stdout)
-            self.assertIn("code-review", result.stdout)
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+            self.assertNotIn("local-skill", result.stdout)
+            self.assertNotIn("code-review", result.stdout)
+            self.assertEqual(state.read_bytes(), before)
+            removed = run_keel(home, "uninstall")
+            self.assertEqual(removed.returncode, 0, removed.stderr + removed.stdout)
+            self.assertFalse(state.exists())
+
+    def test_doctor_does_not_invoke_optional_locator(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as raw:
+            home = Path(raw)
+            installed = run_keel(home, "install", with_local_skill=True)
+            self.assertEqual(installed.returncode, 0, installed.stderr + installed.stdout)
+            self.assertIn("refreshed", installed.stdout)
+            marker = home / "locator-called"
+            # Any invocation would create the marker and fail, including a bogus find result.
+            (fake_tools_dir(home) / "local-skill").write_text(
+                f'#!/bin/sh\ntouch "{marker}"\nexit 1\n', encoding="utf-8"
+            )
+            result = run_keel(home, "doctor", with_local_skill=True)
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+            self.assertFalse(marker.exists())
 
 
 class KeelReviewerAgentTests(unittest.TestCase):
@@ -761,7 +784,7 @@ class KeelReviewContractTests(unittest.TestCase):
             review,
         )
         self.assertIn("父代理不得把仍有阻塞项的结论改成 `PASS`", review)
-        self.assertIn("覆盖 `code-review` 里「任一 `P2` 即不得 `PASS`」", review)
+        self.assertIn("明确适用的更严格项目要求仍须满足", review)
         self.assertNotIn("`P0`–`P2` 阻塞", review)
         reviewer = (ROOT / "agents" / "reviewer.md").read_text(encoding="utf-8")
         self.assertIn("`P0`, `P1`, and `[P2][blocking]` require `CHANGES_REQUESTED`", reviewer)
@@ -1103,6 +1126,15 @@ class KeelVerifyLookupTests(unittest.TestCase):
                 "verify-gates.md",
             ],
         )
+
+
+class VerifyScratchSafetyTests(unittest.TestCase):
+    def test_handbook_and_all_features_never_target_live_home_variables(self) -> None:
+        handbook = ROOT / ".agents/skills/verify-keel"
+        unsafe = re.compile(r"\$(?:HOME|BIN)\b|\$\{(?:HOME|BIN)\}")
+        for path in handbook.rglob("*.md"):
+            with self.subTest(path=path.relative_to(ROOT)):
+                self.assertIsNone(unsafe.search(path.read_text(encoding="utf-8")))
 
 
 class HandbookPathWordingTests(unittest.TestCase):

@@ -4,7 +4,7 @@ CLI / 文件入口。不建真实 Issue。
 
 ## 用户入口（必须都走）
 
-1. **挂载**：Launch 之后确认 `$HOME/.local/share/agent-skills/library/keel-ticket/SKILL.md` 指向本仓库 `skills/keel-ticket/SKILL.md`。
+1. **挂载**：Launch 之后确认 `$KEEL_VERIFY_HOME/.local/share/agent-skills/library/keel-ticket/SKILL.md` 指向本仓库 `skills/keel-ticket/SKILL.md`。
 2. **查找**：PATH 上的 `local-skill find keel-ticket`（scratch 里可用测试用 fake，或本机已装的 `local-skill`）退出码 `0`。
 3. **合同原文**：读本仓库 `skills/keel-ticket/SKILL.md`、`skills/keel/SKILL.md`、`skills/keel-issue/SKILL.md`、`skills/keel-release/SKILL.md`。
 

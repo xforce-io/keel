@@ -15,7 +15,6 @@ from pathlib import Path
 CLI_NAME = "keel"
 SKILL_MD = "SKILL.md"
 STATE_RELATIVE = Path(".config") / "keel" / "state.json"
-REVIEW_CONTRACT_SKILL = "code-review"
 
 ABSENT = "absent"
 OURS = "ours"
@@ -254,16 +253,6 @@ def installPlugin(root: Path) -> tuple[bool, str]:
     return True, text or "ok"
 
 
-def reviewContractStatus() -> tuple[bool, str]:
-    exe = shutil.which("local-skill")
-    if not exe:
-        return False, f"local-skill: ⚠ 未在 PATH（keel-review 需要 `local-skill find {REVIEW_CONTRACT_SKILL}`）"
-    code, text = runTool(exe, "find", REVIEW_CONTRACT_SKILL)
-    if code != 0 or not text:
-        return False, f"{REVIEW_CONTRACT_SKILL}: ⚠ `local-skill find {REVIEW_CONTRACT_SKILL}` 未找到，keel-review 会 BLOCKED"
-    return True, f"{REVIEW_CONTRACT_SKILL}: ok ({exe})"
-
-
 def binDir(args: argparse.Namespace, home: Path) -> Path:
     return Path(args.bin_dir).expanduser() if args.bin_dir else home / ".local" / "bin"
 
@@ -415,9 +404,6 @@ def commandDoctor(args: argparse.Namespace) -> int:
     text, bad = _mountStatus(binDest, root / "bin" / CLI_NAME, "bin", state)
     problems += bad
     lines.append(f"bin: {text}")
-    ok, text = reviewContractStatus()
-    problems += not ok
-    lines.append(text)
     for line in lines:
         print(line)
     if problems:
