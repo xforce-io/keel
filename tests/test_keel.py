@@ -610,7 +610,14 @@ class ProductDesignContractTests(unittest.TestCase):
             "一个自动选用的入口 skill 写明适用场景、输入输出、方法、依赖的工具、合格标准与验证方式",
             "不掌管整次任务生命周期或宿主路由",
             "内部步骤留在普通参考里，不是 skill",
-            "方法可跨任务复用、输入输出契约稳定、值得单独判定对错",
+            "各项是倾向拆分的依据，不要求同时满足",
+            "也不意味着命中一项就必须拆分",
+            "独立、稳定且可跨任务复用的专业方法",
+            "明确的输入和输出，可以定义能力契约",
+            "需要独立评测，可以单独判断质量",
+            "单一流程出现、非常简单且无明显复用价值",
+            "即使尚无单独评测需要，也可以考虑另立 skill",
+            "不因有四个步骤就拆成四个 skill",
             "换执行者时复用该 skill，不复制一份",
             "变体留在入口路由表",
             "CLI、斜杠命令或 API 只限入口、参数和约束",
@@ -619,6 +626,8 @@ class ProductDesignContractTests(unittest.TestCase):
             "在 L1 折衷节记录拆分决定",
         ):
             self.assertIn(phrase, rules, phrase)
+        self.assertNotIn("另立 skill 仅当同时满足", rules)
+        self.assertIn("§2.1、§5.1", rules)
         self.assertNotIn(rules, always)
 
         for relative in (
