@@ -607,7 +607,7 @@ class ProductDesignContractTests(unittest.TestCase):
             encoding="utf-8"
         )
         for phrase in (
-            "一个自动选用的入口 skill 写明适用场景、输入输出、方法、依赖的工具、合格标准与验证方式",
+            "适用场景、输入输出、方法、依赖的工具、合格标准与验证方式",
             "不掌管整次任务生命周期或宿主路由",
             "内部步骤留在普通参考里，不是 skill",
             "各项是倾向拆分的依据，不要求同时满足",
@@ -619,7 +619,13 @@ class ProductDesignContractTests(unittest.TestCase):
             "即使尚无单独评测需要，也可以考虑另立 skill",
             "不因有四个步骤就拆成四个 skill",
             "换执行者时复用该 skill，不复制一份",
-            "变体留在入口路由表",
+            "Playbook 引用 Skill，不复制 Skill 正文",
+            "Subskill 不是新增层级",
+            "不为每种主题、资料类型或步骤组合新建 Playbook",
+            "需要隔离或并行时选择执行主体",
+            "不能只写在提示词里",
+            "阶段覆盖、依赖、检查点、顺序及异常分支",
+            "验证交付物、用户目标",
             "CLI、斜杠命令或 API 只限入口、参数和约束",
             "不建嵌套 skill 树",
             "验收写做对了是什么样，不写 skill 被调用了",
@@ -627,7 +633,10 @@ class ProductDesignContractTests(unittest.TestCase):
         ):
             self.assertIn(phrase, rules, phrase)
         self.assertNotIn("另立 skill 仅当同时满足", rules)
-        self.assertIn("§2.1、§5.1", rules)
+        self.assertNotIn("依据《", rules)
+        self.assertNotIn("§2.1", rules)
+        for concept in ("Command", "Playbook", "Skill", "Subskill", "Subagent", "Orchestrator", "Runtime", "Eval"):
+            self.assertIn("| " + concept + " |", rules, concept)
         self.assertNotIn(rules, always)
 
         for relative in (
