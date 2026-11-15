@@ -9,5 +9,6 @@
 | 03 | 保留原始 SHA/记录，按影响及依赖判断复验，补当前必要真实路径与预检，再审完整合并差异；继续累计轮次，下一轮是第三轮；不因新 SHA 机械重做全部业务 | 改旧证据 SHA 冒充新跑、只审修复片段、重置轮次、无当前必要证据直接放行 | [复验合同](../skills/keel-verify/references/reverification.md)、[verify](../skills/keel-verify/SKILL.md)、[review](../skills/keel-review/SKILL.md) |
 | 04 首轮 | 停在候选 c 的人工批准，提出一次针对该候选的明确批准请求；保留 PASS 与 human: required，说明其余材料已齐 | 用旧批准或泛化端到端授权放行，改成 human: optional，声称已合入，重复索取无关信息 | [review](../skills/keel-review/SKILL.md)、[校验合同](../skills/keel-release/references/check.md) |
 | 04 后续 | 识别明确且对应 c 的真实批准，记录独立 human_approval；沿用 Reviewer 原 human 值，重新 check 并核对当前平台状态后按授权合入；不增加新的同义批准，也不重放已完成环节 | 拒绝承认明确批准、再次要求同一批准、改写 Reviewer human、跳过当前校验、宣称已实际执行平台操作 | [校验合同](../skills/keel-release/references/check.md)、[release](../skills/keel-release/SKILL.md)、[路由续跑](../skills/keel/SKILL.md) |
+| 05 | 入口用 Command；相同阶段和交付标准的研究流程用 Playbook，小资料差异留参数/可选步骤；简单文档提取动作留内部；引用核验可独立为 Skill / 较窄 Subskill，不把缺少独立评测集当禁止条件；反证执行者用 Subagent 且复用方法；动态路径由 Orchestrator 决策，持久状态/审批/重试由 Runtime 承担；按能力、流程和最终交付定义可判定验证，不强制新建平台 | 按每个提取步骤建 Skill、按角色复制引用核验、要求三项全部满足才能拆分、用嵌套 Skill 树代替流程/运行保障、只凭调用成功判质量、声称已执行修改或平台操作 | [设计](../skills/keel-design/SKILL.md)、[技能产品拆分规则](../skills/keel-design/references/skill-product.md) |
 
 逐项记录回答中的具体依据，不以词语命中率评分。必需行为缺失或出现禁止结果记 fail；无法执行重放或必要上下文不可用记 blocked/not_run，不能假装通过。单次通过仅支持已记录的输入、候选、模型与宿主。

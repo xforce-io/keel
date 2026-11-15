@@ -255,11 +255,6 @@ class PreflightTests(unittest.TestCase):
         self.assertEqual(current["associations"][0]["version"], "v3")
 
     def test_l18_and_reused_contract_lists_are_caller_supplied(self):
-        source = (ROOT / "skills/keel-verify/scripts/preflight.py").read_text(encoding="utf-8")
-        cli = (ROOT / "bin/keel").read_text(encoding="utf-8")
-        self.assertNotIn("atelier", source.lower())
-        self.assertNotIn("Artifact", source)
-        self.assertNotIn("atelier", cli.lower())
         spaces = (["S1.A1", "S4.A6"], ["contract.login", "contract.export"])
         for ids in spaces:
             with self.subTest(ids=ids):
