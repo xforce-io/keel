@@ -12,7 +12,7 @@ description: >
 
 在**真用户路径**上证明本 Issue 的 `S1…Sn` 及适用的 L1.8 验收。驾驶手册和功能地图在**当前应用仓库**，不在 keel 插件仓库。
 
-本环节不是 `keel-release` 合入后的健康检查。
+本环节不是 `keel-release` 合入后的健康检查。选择和核对验证方法时完整读取 [测试选择准则](../keel-dev/references/test-strategy.md)；文档或 Skill 的决策行为不能因没有 UI 就仅以文本存在性判通过。
 
 ## 核对已有环境
 

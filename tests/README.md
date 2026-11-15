@@ -1,5 +1,7 @@
 # 测试说明
 
+通用选择方法以 [测试选择准则](../skills/keel-dev/references/test-strategy.md) 为准；本文件记录本仓入口、迁移与验证范围。
+
 ## 验证边界
 
 - `python3 -m unittest discover -s tests` 运行离线、确定性检查：真实 CLI 的返回值、JSON、文件变化及隔离行为，以及必要的仓库资源结构。

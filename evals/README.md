@@ -1,6 +1,6 @@
 # keel 决策行为样例
 
-五组脱敏合成输入，供维护者重放关键决策；不新增产品规则、模型 API、执行器或自动门禁。输入不是实际仓库状态，也不是可执行的交付证据。
+六组脱敏合成输入，供维护者重放关键决策；不新增产品规则、模型 API、执行器或自动门禁。输入不是实际仓库状态，也不是可执行的交付证据。
 
 | 输入 | 覆盖的决策 |
 |---|---|
@@ -8,6 +8,7 @@
 | [02-investigate-bug.md](inputs/02-investigate-bug.md) | 修复前调查及已确认产品契约 |
 | [03-review-retry.md](inputs/03-review-retry.md) | 新候选复验、历史证据与审查轮次 |
 | [04-human-approval.md](inputs/04-human-approval.md) | 当前候选人工批准前停点 |
+| [06-test-selection.md](inputs/06-test-selection.md) | 普通应用中结构、运行行为与规则决策的证据选择 |
 | [05-skill-composition.md](inputs/05-skill-composition.md) | 技能产品的能力、流程、执行主体与运行保障选择 |
 | [04-human-approval-followup.md](inputs/04-human-approval-followup.md) | 同组固定后续回复，批准后的恢复 |
 
