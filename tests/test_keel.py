@@ -588,6 +588,68 @@ class ProductDesignContractTests(unittest.TestCase):
             self.assertIn("不要求每条 Story 各有一张图", text, label)
             self.assertNotIn("每条 Story 必须提供交互图", text, label)
 
+    def test_skill_product_rules_apply_only_for_an_agent_skill(self) -> None:
+        design = (ROOT / "skills/keel-design/SKILL.md").read_text(encoding="utf-8")
+        always = design.split("先完整读取：", 1)[1].split("L1 是完整产品设计", 1)[0]
+        self.assertIn("when-to-write.md", always)
+        self.assertIn("design-contract.md", always)
+        self.assertNotIn("skill-product.md", always)
+        self.assertNotIn("不掌管整次任务生命周期或宿主路由", always)
+
+        self.assertIn("本次要设计或修改的产品对象是 agent skill", design)
+        self.assertIn("行为事实源是 `SKILL.md`", design)
+        self.assertIn("在写 L1/L2 之前完整读取", design)
+        self.assertIn("references/skill-product.md", design)
+        self.assertIn("本次产品对象不是 agent skill 时不读该文件", design)
+        self.assertIn("仓库里仅仅存在一份 `SKILL.md` 不构成触发", design)
+
+        rules = (ROOT / "skills/keel-design/references/skill-product.md").read_text(
+            encoding="utf-8"
+        )
+        for phrase in (
+            "适用场景、输入输出、方法、依赖的工具、合格标准与验证方式",
+            "不掌管整次任务生命周期或宿主路由",
+            "内部步骤留在普通参考里，不是 skill",
+            "各项是倾向拆分的依据，不要求同时满足",
+            "也不意味着命中一项就必须拆分",
+            "独立、稳定且可跨任务复用的专业方法",
+            "明确的输入和输出，可以定义能力契约",
+            "需要独立评测，可以单独判断质量",
+            "单一流程出现、非常简单且无明显复用价值",
+            "即使尚无单独评测需要，也可以考虑另立 skill",
+            "不因有四个步骤就拆成四个 skill",
+            "换执行者时复用该 skill，不复制一份",
+            "Playbook 引用 Skill，不复制 Skill 正文",
+            "Subskill 不是新增层级",
+            "不为每种主题、资料类型或步骤组合新建 Playbook",
+            "需要隔离或并行时选择执行主体",
+            "不能只写在提示词里",
+            "阶段覆盖、依赖、检查点、顺序及异常分支",
+            "验证交付物、用户目标",
+            "CLI、斜杠命令或 API 只限入口、参数和约束",
+            "不建嵌套 skill 树",
+            "验收写做对了是什么样，不写 skill 被调用了",
+            "在 L1 折衷节记录拆分决定",
+        ):
+            self.assertIn(phrase, rules, phrase)
+        self.assertNotIn("另立 skill 仅当同时满足", rules)
+        self.assertNotIn("依据《", rules)
+        self.assertNotIn("§2.1", rules)
+        for concept in ("Command", "Playbook", "Skill", "Subskill", "Subagent", "Orchestrator", "Runtime", "Eval"):
+            self.assertIn("| " + concept + " |", rules, concept)
+        self.assertNotIn(rules, always)
+
+        for relative in (
+            "skills/keel/SKILL.md",
+            "docs/glossary.md",
+            "skills/keel/references/when-to-write.md",
+            "skills/keel-dev/SKILL.md",
+            "skills/keel-design/references/design-contract.md",
+        ):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            self.assertNotIn("skill-product.md", text, relative)
+            self.assertNotIn("不掌管整次任务生命周期或宿主路由", text, relative)
+
     def test_downstream_stages_consume_detailed_acceptance(self) -> None:
         for stage in ("keel-dev", "keel-verify", "keel-review", "keel-release"):
             text = (ROOT / "skills" / stage / "SKILL.md").read_text(encoding="utf-8")
