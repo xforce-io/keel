@@ -18,6 +18,7 @@
     li { padding: .8rem 1rem; background: white; border: 1px solid #c4d5ce; border-radius: .5rem; }
     li p { padding-top: .25rem; }
     .branch { color: #70431b; }
+    .milestone { background: #e7f3ef; }
     code { overflow-wrap: anywhere; }
   </style>
 </head>
@@ -36,7 +37,7 @@
   <section id="objects">
     <h2>对象关系</h2>
     <ul>
-      <li>训练运行 → <strong>产出</strong> → 模型版本 <code>intent-v12</code></li>
+      <li>模型版本 <code>intent-v12</code> → <strong>登记自</strong> → 训练运行的模型产物</li>
       <li>评估 → <strong>引用为基线</strong> → 同一个模型版本 <code>intent-v12</code></li>
       <li>评估 → <strong>生成</strong> → 评估结果</li>
     </ul>
@@ -45,15 +46,17 @@
   <section id="flow">
     <h2>核心业务流程</h2>
     <ol>
+      <li class="milestone"><strong>触发事件 · 训练完成</strong><p>训练运行的模型产物可供登记。</p></li>
       <li>
         <strong>登记模型</strong>
-        <p>训练完成后，授权人员从训练产物登记模型版本 <code>intent-v12</code>。</p>
+        <p>授权人员从训练产物登记模型版本 <code>intent-v12</code>，记录其来源。</p>
       </li>
       <li>
         <strong>提交评估</strong>
         <p>评估人员选择 <code>intent-v12</code> 作为基线。权限校验通过后建立基线关系并发起评估。</p>
         <p class="branch"><strong>无权引用</strong>时阻断提交，保留草稿并返回基线选择。</p>
       </li>
+      <li class="milestone"><strong>状态变化 · 等待结果 → 结果就绪</strong><p>评估提交后等待系统执行。系统生成评估结果后，才可查看比较。</p></li>
       <li>
         <strong>查看比较结果</strong>
         <p>评估结果就绪后，评估人员在口径一致时查看与基线的差异。</p>
