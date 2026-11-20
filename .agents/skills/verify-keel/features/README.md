@@ -18,6 +18,7 @@
 | [release-health.md](./release-health.md) | 发布后即时健康判定与本次 release 的结束边界 | #22 S1–S3 |
 
 | [design-contracts.md](./design-contracts.md) | 两层设计、逐项验收、迁移与已安装合同引用 | #24 S1–S3 |
+| [product-ontology.md](./product-ontology.md) | 按语义变化走查产品对象、关系、行动与风险 | #62 S1–S2 |
 | [design-clarification.md](./design-clarification.md) | 按需分轮澄清产品取舍、保留回答、修订关联验收；明确契约小修复直接复用 | #35 S1–S4 |
 | [story-path-diagram.md](./story-path-diagram.md) | 多步骤或有分支的用户交互路径要能在一张图里看完；单步无分支和纯技术可省略 | #38 S1–S3 |
 | [reproduce-before-fix.md](./reproduce-before-fix.md) | agent 先复现调查再定修复方案，修复后原路径对照 | #28 S1–S3 |
