@@ -15,6 +15,7 @@
 
 | [delivery-gate.md](./delivery-gate.md) | 平台中立 check：索引、阻断恢复与三类路径 | #20 S1–S3 |
 | [evidence-preflight.md](./evidence-preflight.md) | `keel preflight` 在送审前核对编号、分支、入口和声明关联 | #26 S1–S2 |
+| [release-ci-handoff.md](./release-ci-handoff.md) | 从原 PR 接手必需 CI 的失败、缺证或进行中状态 | #64 S1–S2 |
 | [release-health.md](./release-health.md) | 发布后即时健康判定与本次 release 的结束边界 | #22 S1–S3 |
 
 | [design-contracts.md](./design-contracts.md) | 两层设计、逐项验收、迁移与已安装合同引用 | #24 S1–S3 |
