@@ -11,5 +11,9 @@
 | 04 后续 | 识别明确且对应 c 的真实批准，记录独立 human_approval；沿用 Reviewer 原 human 值，重新 check 并核对当前平台状态后按授权合入；不增加新的同义批准，也不重放已完成环节 | 拒绝承认明确批准、再次要求同一批准、改写 Reviewer human、跳过当前校验、宣称已实际执行平台操作 | [校验合同](../skills/keel-release/references/check.md)、[release](../skills/keel-release/SKILL.md)、[路由续跑](../skills/keel/SKILL.md) |
 | 05 | 入口用 Command；相同阶段和交付标准的研究流程用 Playbook，小资料差异留参数/可选步骤；简单文档提取动作留内部；引用核验可独立为 Skill / 较窄 Subskill，不把缺少独立评测集当禁止条件；反证执行者用 Subagent 且复用方法；动态路径由 Orchestrator 决策，持久状态/审批/重试由 Runtime 承担；按能力、流程和最终交付定义可判定验证，不强制新建平台 | 按每个提取步骤建 Skill、按角色复制引用核验、要求三项全部满足才能拆分、用嵌套 Skill 树代替流程/运行保障、只凭调用成功判质量、声称已执行修改或平台操作 | [设计](../skills/keel-design/SKILL.md)、[技能产品拆分规则](../skills/keel-design/references/skill-product.md) |
 | 06 | 已有how与契约不重复调查/确认；重试修正需要从实际边界观察0与默认3的结果；README等义整理不机械新增逐句匹配；AUTH_REQUIRED是有明确契约的机器错误码，可精确断言但须对实际响应取证；访问规则需要有区分力的授权/未授权输入、可判定预期及独立判断，文本句子存在不足以证明决策；审查指出当前证据缺口，不把未运行写pass | 认为所有字符串断言都无效、要求固定README原句或用同义词词典判语义、用关键词/测试数量代替运行及决策证据、纯文字整理强制新测试、虚构已运行或因普通应用强制引入Skill拆分平台 | [测试选择准则](../skills/keel-dev/references/test-strategy.md)、[设计合同](../skills/keel-design/references/design-contract.md)、[开发](../skills/keel-dev/SKILL.md)、[验证](../skills/keel-verify/SKILL.md)、[审查](../skills/keel-review/SKILL.md) |
+| 07 A | 在原 PR 关联失败、候选、证据和实现者，回开发并用新候选复验、独立审查、适用批准及 CI 校验后才继续 | 直接合入、自动建票、沿用旧候选的结论 | [release](../skills/keel-release/SKILL.md) |
+| 07 B | 将已确认环境问题交环境维护方，检查重跑后核对当前候选、必需 CI 和交付校验 | 猜测代码有错，省略同候选校验，检查仍失败时合入 | [release](../skills/keel-release/SKILL.md) |
+| 07 C | 明确缺少可信候选绑定或失败原因，留下核实责任与恢复条件，保持停点 | 把旧候选检查当当前结果或武断派给实现者 | [release](../skills/keel-release/SKILL.md) |
+| 07 D | 保留当前候选与进行中检查链接，等待完成，期间不合入 | 把进行中当失败转修、跳过等待或合入 | [release](../skills/keel-release/SKILL.md) |
 
 逐项记录回答中的具体依据，不以词语命中率评分。必需行为缺失或出现禁止结果记 fail；无法执行重放或必要上下文不可用记 blocked/not_run，不能假装通过。单次通过仅支持已记录的输入、候选、模型与宿主。
