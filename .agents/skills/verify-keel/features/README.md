@@ -11,13 +11,15 @@
 | [uninstall.md](./uninstall.md) | `keel uninstall` 只拆 keel 自己挂上的链接或副本 | 外人不删；`--keep-bin` 留 CLI |
 | [sync.md](./sync.md) | 仓库里有 `keel-sync`；install/doctor 能列出；Grok Bot 按该文件更新账号级 skill | #16 S1–S3 |
 
-| [verify-gates.md](./verify-gates.md) | 开发地图覆盖、verify 发布门禁、设计映射与独立维护入口 | #18 S1–S4；#52 S1–S2 |
+| [verify-gates.md](./verify-gates.md) | 开发地图覆盖、verify 发布门禁、设计映射与独立维护入口 | #18 S1–S4；#52 S1–S2；#56 S1–S5 |
 
 | [delivery-gate.md](./delivery-gate.md) | 平台中立 check：索引、阻断恢复与三类路径 | #20 S1–S3 |
 | [evidence-preflight.md](./evidence-preflight.md) | `keel preflight` 在送审前核对编号、分支、入口和声明关联 | #26 S1–S2 |
+| [release-ci-handoff.md](./release-ci-handoff.md) | 从原 PR 接手必需 CI 的失败、缺证或进行中状态 | #64 S1–S2 |
 | [release-health.md](./release-health.md) | 发布后即时健康判定与本次 release 的结束边界 | #22 S1–S3 |
 
 | [design-contracts.md](./design-contracts.md) | 两层设计、逐项验收、迁移与已安装合同引用 | #24 S1–S3 |
+| [product-ontology.md](./product-ontology.md) | 按语义变化走查产品对象、关系、行动与风险 | #62 S1–S2 |
 | [design-clarification.md](./design-clarification.md) | 按需分轮澄清产品取舍、保留回答、修订关联验收；明确契约小修复直接复用 | #35 S1–S4 |
 | [story-path-diagram.md](./story-path-diagram.md) | 多步骤或有分支的用户交互路径要能在一张图里看完；单步无分支和纯技术可省略 | #38 S1–S3 |
 | [reproduce-before-fix.md](./reproduce-before-fix.md) | agent 先复现调查再定修复方案，修复后原路径对照 | #28 S1–S3 |
@@ -27,3 +29,4 @@
 未列入的 `/keel` 会话路由、各环节 skill 正文：本 Issue 不对则不要 Drive。新增用户可见 CLI 入口时在此加一行并补功能文件；验收 Story 对不上任何一行即 BLOCKED。
 
 | [project-knowledge.md](./project-knowledge.md) | 按任务复用项目知识并核对源码；缺号时查重、复用或建票 | #33 S1–S3 |
+| [cite-decision-record.md](./cite-decision-record.md) | 主张取舍或回归来源时引用提交与评审记录；机制说明和先复现不受影响 | #59 S1 |

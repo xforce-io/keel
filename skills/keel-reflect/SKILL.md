@@ -71,7 +71,7 @@ Accepted 里 **AGENTS 至多一条**（`no-change` / `merge` / `rewrite` / `dele
 
 ## Backlog
 
-产品缺口，或「该做成检查器而不是再写说明书」。**出 Issue 草案，你批了才建**，不自动建单。准入、优先级、去重见 [issues.md](references/issues.md)。
+产品缺口、有证据且保持现有行为的代码库改进，或「该做成检查器而不是再写说明书」。抽象偏好和当前验收尚未完成的项不进入 Backlog。**出 Issue 草案，你批了才建**，不自动建单。准入、优先级、去重见 [issues.md](references/issues.md)。
 
 ## 4. 结构落实检查
 

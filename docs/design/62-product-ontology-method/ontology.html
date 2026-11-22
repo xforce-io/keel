@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>产品概念建模示例 · 模型评估</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f3f7f6; color: #162924; font: 1rem/1.65 system-ui, sans-serif; }
+    main { max-width: 60rem; margin: auto; padding: 2rem clamp(1rem, 5vw, 4rem); }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: clamp(1.75rem, 5vw, 2.75rem); line-height: 1.25; }
+    h2 { margin-bottom: .8rem; }
+    section { margin-top: 2.5rem; }
+    nav { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }
+    a { color: #0a6255; text-underline-offset: .2em; }
+    ul, ol { padding: 0; margin: 0; display: grid; gap: .7rem; list-style-position: inside; }
+    li { padding: .8rem 1rem; background: white; border: 1px solid #c4d5ce; border-radius: .5rem; }
+    li p { padding-top: .25rem; }
+    .branch { color: #70431b; }
+    .milestone { background: #e7f3ef; }
+    code { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>模型登记与基线评估</h1>
+    <p>产品概念建模示例</p>
+    <nav aria-label="评审索引">
+      <a href="#objects">对象关系</a>
+      <a href="#flow">核心业务流程</a>
+      <a href="product.md">L1 产品设计</a>
+    </nav>
+  </header>
+
+  <section id="objects">
+    <h2>对象关系</h2>
+    <ul>
+      <li>模型版本 <code>intent-v12</code> → <strong>登记自</strong> → 训练运行的模型产物</li>
+      <li>评估 → <strong>引用为基线</strong> → 同一个模型版本 <code>intent-v12</code></li>
+      <li>评估 → <strong>生成</strong> → 评估结果</li>
+    </ul>
+  </section>
+
+  <section id="flow">
+    <h2>核心业务流程</h2>
+    <ol>
+      <li class="milestone"><strong>触发事件 · 训练完成</strong><p>训练运行的模型产物可供登记。</p></li>
+      <li>
+        <strong>登记模型</strong>
+        <p>授权人员从训练产物登记模型版本 <code>intent-v12</code>，记录其来源。</p>
+      </li>
+      <li>
+        <strong>提交评估</strong>
+        <p>评估人员选择 <code>intent-v12</code> 作为基线。权限校验通过后建立基线关系并发起评估。</p>
+        <p class="branch"><strong>无权引用</strong>时阻断提交，保留草稿并返回基线选择。</p>
+      </li>
+      <li class="milestone"><strong>状态变化 · 等待结果 → 结果就绪</strong><p>评估提交后等待系统执行。系统生成评估结果后，才可查看比较。</p></li>
+      <li>
+        <strong>查看比较结果</strong>
+        <p>评估结果就绪后，评估人员在口径一致时查看与基线的差异。</p>
+        <p class="branch"><strong>口径不一致</strong>时展示无法直接比较，本次比较结束。</p>
+      </li>
+    </ol>
+  </section>
+</main>
+</body>
+</html>
