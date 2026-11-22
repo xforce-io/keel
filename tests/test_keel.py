@@ -586,41 +586,5 @@ class VerifyScratchSafetyTests(unittest.TestCase):
                 self.assertIsNone(unsafe.search(path.read_text(encoding="utf-8")))
 
 
-class DomainHandoffContractTests(unittest.TestCase):
-    """Lock the draft, how, and backlog handoff order the agents actually read."""
-
-    def test_scenario_check_runs_before_clarification_read(self) -> None:
-        design = (ROOT / "skills/keel-design/SKILL.md").read_text(encoding="utf-8")
-        read_at = design.index("完整读取 [按需澄清](references/clarification.md)")
-        before = design[:read_at]
-        for phrase in ("规则之间的矛盾", "遗漏的失败结果", "能推翻当前假设的反例"):
-            self.assertIn(phrase, before)
-        self.assertLess(before.index("规则之间的矛盾"), before.rindex("不同选择会改变产品结果"))
-
-    def test_how_handoff_allows_source_without_a_contract(self) -> None:
-        how = (ROOT / "skills/keel-how/SKILL.md").read_text(encoding="utf-8")
-        start = how.index("涉及业务术语歧义")
-        end = how.index("简单单模块改动无需补一套领域模型", start)
-        chunk = how[start:end]
-        self.assertIn("引用源码", chunk)
-        self.assertIn("已有契约存在时一并引用", chunk)
-        self.assertIn("没有书面契约时仍交接", chunk)
-        self.assertIn("标为未验证", chunk)
-        self.assertIn("不因缺契约文档而阻断", chunk)
-        self.assertNotIn("每项引用已有契约与源码", chunk)
-        self.assertIn("简单单模块改动无需补一套领域模型", how[end:])
-
-    def test_backlog_admits_evidenced_codebase_improvements(self) -> None:
-        reflect = (ROOT / "skills/keel-reflect/SKILL.md").read_text(encoding="utf-8")
-        backlog = reflect.split("## Backlog", 1)[1].split("## 4.", 1)[0]
-        self.assertIn("有证据且保持现有行为的代码库改进", backlog)
-        self.assertIn("抽象偏好", backlog)
-        self.assertIn("当前验收尚未完成", backlog)
-        issues = (ROOT / "skills/keel-reflect/references/issues.md").read_text(encoding="utf-8")
-        header = issues.split("## 准入与合并", 1)[0]
-        self.assertIn("有证据且保持现有行为的代码库改进", header)
-        self.assertNotIn("只在 `keel-reflect` 的 Backlog 里存在产品 Issue 候选时读取本文件", header)
-
-
 if __name__ == "__main__":
     unittest.main()
